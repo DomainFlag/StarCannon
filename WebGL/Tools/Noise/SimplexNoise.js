@@ -5,8 +5,16 @@ let G3 = 1.0 / 6.0;
 let F4 = (Math.sqrt(5.0) - 1.0) / 4.0;
 let G4 = (5.0 - Math.sqrt(5.0)) / 20.0;
 
-function SimplexNoise() {
-    let random = Math.random;
+function SimplexNoise(randomOrSeed) {
+    var random;
+    if (typeof randomOrSeed == 'function') {
+        random = randomOrSeed;
+    }
+    else if (randomOrSeed) {
+        random = alea(randomOrSeed);
+    } else {
+        random = Math.random;
+    }
     this.p = buildPermutationTable(random);
     this.perm = new Uint8Array(512);
     this.permMod12 = new Uint8Array(512);
