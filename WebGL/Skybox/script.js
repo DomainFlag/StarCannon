@@ -185,12 +185,3 @@ function startWebGL(gl) {
 
     drawScene(gl);
 }
-
-function drawScene() {
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    gl.uniformMatrix4fv(matrixCameraLocation, false, viewMatrix);
-    gl.drawArrays(gl.TRIANGLES, 0, whateverNumber);
-
-    requestAnimationFrame(drawScene.bind(this, someOtherFunc));
-}
