@@ -11,7 +11,6 @@
 #include <assert.h>
 #include <unistd.h>
 #include <SOIL/SOIL.h>
-// #include "./../Tools/Matrix/Matrix.cpp"
 using namespace std;
 
 static unsigned int CompileShader(unsigned int type, const string& source) {

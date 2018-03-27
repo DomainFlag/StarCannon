@@ -2,41 +2,35 @@
 #define SKYLAYER
 
 #include <GL/glew.h>
-#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <map>
 #include <cmath>
-#include <assert.h>
-#include <unistd.h>
 #include <SOIL/SOIL.h>
 #include "./../Tools/Matrix/Matrix.h"
 using namespace std;
 
 class SkyLayer {
 public:
-   Matrix * rotationMX = new Matrix();
-   Matrix * rotationMY = new Matrix();
-   Matrix * rotationMZ = new Matrix();
-   float rotationX = 0.0f;
-   float rotationY = 0.0f;
-   float rotationZ = 0.0f;
+   const GLFWvidmode * mode;
 
-   Matrix * translation = new Matrix();
-   float translationZ = 0.0f;
+   Matrix cameraMatrix;
+   Matrix quaternionMatrix, cameraRotX, cameraRotY, cameraRotZ;
 
-   double offsetX = 0.0f;
-   double offsetY = 0.0f;
+   float yaw = 0, pitch = 0, roll = 0;
+   float traceYaw = 0,tracePitch = 0, traceRoll = 0;
 
    unsigned int program;
    unsigned int bufferPosition;
 
-   Matrix * u_swap1 = new Matrix();
-   Matrix * u_swap2 = new Matrix();
+   vector<float> pos = {
+      -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f,
+      1.0f, 1.0f, -1.0f, -1.0f,  -1.0f, -1.0f, 1.0f, -1.0f, -1.0f
+   };
 
-   GLint vertexPositionLocation, matrixCameraLocation;
+   GLint attribPositionLoc, unifCameraLoc;
 
    string vertexSkyShader = R"(
       #version 130
@@ -61,17 +55,23 @@ public:
       } 
    )";
 
-   SkyLayer();
+   SkyLayer(const GLFWvidmode * mode);
 
-   void setSettings();
+   void cursorListener(GLFWwindow * window, double posX, double posY);
 
-   void setDataLocations();
+   void keyboardListener(GLFWwindow * window, int key, int scancode, int action, int mods);
 
-   void setData();
+   void listenContinouslyToCursor();
 
-   void renderSky();
+   void setParameters();
 
-   void freeSky();
+   void setVariablesLocation();
+
+   void setVariablesData();
+
+   void renderProgram();
+
+   void freeProgram();
 };
 
 #endif

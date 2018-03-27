@@ -1,92 +1,82 @@
 #include "Sky.h"
 
 #include <GL/glew.h>
-#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cmath>
-#include <math.h>
-#include <cmath>
-#include <assert.h>
-#include <unistd.h>
 #include <SOIL/SOIL.h>
-// #include "./../Tools/Matrix/Matrix.cpp"
+#include "./../Shader/Shader.h"
+#include "./../Tools/Matrix/Matrix.h"
 using namespace std;
 
-unsigned int CompileShader(unsigned int type, const string& source) {
-   unsigned int id = glCreateShader(type);
-   const char * src = source.c_str();
-   glShaderSource(id, 1, &src, NULL);
-   glCompileShader(id);
-
-   int result; 
-   glGetShaderiv(id, GL_COMPILE_STATUS, &result);
-
-   if(result == GL_FALSE) {
-      cout << "Failed to compile shader" << std::endl;
-      GLint maxLength = 0;
-      glGetShaderiv(id, GL_INFO_LOG_LENGTH, &maxLength);
-
-      vector<GLchar> errorLog(maxLength);
-      glGetShaderInfoLog(id, maxLength, &maxLength, &errorLog[0]);
-
-      int iter;
-      for (vector<GLchar>::const_iterator iter = errorLog.begin(); iter != errorLog.end(); ++iter)
-         cout << *iter;
-
-      glDeleteShader(id);
-   }
-   return id;
-}
-
-int CreateProgram(const string& vertexShader, const string& fragmentShader) {
-   unsigned int program = glCreateProgram();
-   unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
-   unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
-
-   glAttachShader(program, vs);
-   glAttachShader(program, fs);
-   glLinkProgram(program);
-   glValidateProgram(program);
-
-   glDetachShader(program,vs);
-   glDetachShader(program,fs);
-   glDeleteShader(vs); 
-   glDeleteShader(fs);
-
-   return program;
-}
-
-
-SkyLayer::SkyLayer() {
-   rotationMX->rotationX(rotationX);
-   rotationMY->rotationX(rotationY);
-   rotationMZ->rotationX(rotationZ);
-   translation->translation(0.0f, 0.0f, 0.0f);
-
+SkyLayer::SkyLayer(const GLFWvidmode * mode) {
+   this->mode = mode;
    this->program = CreateProgram(vertexSkyShader, fragmentSkyShader);
-   this->setDataLocations();
-   this->setData();
+   this->setParameters();
+   this->setVariablesLocation();
+   this->setVariablesData();
 };
 
-void SkyLayer::setSettings() {
-   // glEnable(GL_DEPTH_TEST);
-   // glEnable(GL_CULL_FACE);
-   // glDepthFunc(GL_LESS);
-   // glEnable(GL_BLEND);
-   // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+void SkyLayer::cursorListener(GLFWwindow * window, double posX, double posY) {
+   /**
+    * Function equation f(x)=1/x will be used to lower the rotation from outer to center of the screen
+    * Where f(x)=1/x has the domain [1/2, 4] with the image [0.25, 2] and [-4, -1/2] with the image [-2, -0.25]
+    * Where, the derivative decreases from 1/2 to 4 and increases from -4 to -1/2
+    */
+   float x = ((posX-mode->width/2.0f)/(mode->width/2.0f));
+   float y = ((posY-mode->height/2.0f)/(mode->height/2.0f));
+
+   if(x < 0.0f) {
+       x = (x+1.0f)*7.0f/2.0f+1.0f/2.0f;
+       this->traceYaw = 1.0f/x;
+   } else {
+       x = -(x-1.0f)*7.0f/2.0f+1.0f/2.0f;
+       this->traceYaw = -1.0f/x;
+   }
+
+   if(y < 0.0f) {
+       y = (y+1.0f)*7.0f/2.0f+1.0f/2.0f;
+       this->tracePitch = 1.0f/y;
+   } else {
+       y = -(y-1.0f)*7.0f/2.0f+1.0f/2.0f;
+       this->tracePitch = -1.0f/y;
+   }
+};
+
+void SkyLayer::keyboardListener(GLFWwindow * window, int key, int scancode, int action, int mods) {
+
+};
+
+void SkyLayer::listenContinouslyToCursor() {
+   this->yaw += this->traceYaw/360.0f*2.0f;
+   this->pitch += -this->tracePitch/360.0f*2.0f;
+   if(this->yaw < 0)
+       this->yaw += 2*M_PI;
+   if(this->pitch < 0)
+       this->pitch += 2*M_PI;
+   this->yaw = fmod(this->yaw, 2*M_PI);
+   this->pitch = fmod(this->pitch, 2*M_PI);
+};
+
+void SkyLayer::setParameters() {
+   glDisable(GL_DEPTH_TEST);
+   glDisable(GL_BLEND);
+   glEnable(GL_TEXTURE_2D);
+   glEnable(GL_CULL_FACE);
 }
 
-void SkyLayer::setDataLocations() {
-   vertexPositionLocation = glGetAttribLocation(program, "a_position");
-   matrixCameraLocation = glGetUniformLocation(program, "u_camera");
+void SkyLayer::setVariablesLocation() {
+   this->attribPositionLoc = glGetAttribLocation(program, "a_position");
+   this->unifCameraLoc = glGetUniformLocation(program, "u_camera");
 }
 
-void SkyLayer::setData() {
-   vector<string> texts = {
-      "rt", "lf", "up", "dn", "bk", "ft"
+void SkyLayer::setVariablesData() {
+   glUseProgram(this->program);
+
+   vector<string> cycle = {
+      "rt", "lf", "up", "bk", "bk", "ft"
    };
 
    GLuint texture;
@@ -94,10 +84,9 @@ void SkyLayer::setData() {
    glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
    
    for(int g = 0; g < 6; g++) {
-      int width, height;
-      string file = "./../Tools/Textures/World/lagoon_";
-      file = file + texts[g] + ".jpg";
-      unsigned char * image = SOIL_load_image(file.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+      int width, height, channel;
+      string file = "./../Tools/Textures/Sky/sky_" + cycle[g] + ".png";
+      unsigned char * image = SOIL_load_image(file.c_str(), &width, &height, &channel, SOIL_LOAD_RGB);
       if(image == NULL) {
          cout << "Error while loading texture" << endl;
          exit(1);
@@ -113,45 +102,37 @@ void SkyLayer::setData() {
    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
-   vector<float> pos = {
-      -1.0f,  -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f,
-      1.0f, 1.0f, -1.0f, -1.0f,  -1.0f, -1.0f, 1.0f, -1.0f, -1.0f
-   };
+   glEnableVertexAttribArray(this->attribPositionLoc);
 
    // Buffer for position of Sky
    glGenBuffers(1, &this->bufferPosition);
    glBindBuffer(GL_ARRAY_BUFFER, this->bufferPosition);
 
    glBufferData(GL_ARRAY_BUFFER, pos.size()*sizeof(float), pos.data(), GL_STATIC_DRAW);
-   glEnableVertexAttribArray(vertexPositionLocation);
-   glVertexAttribPointer(vertexPositionLocation, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+   glVertexAttribPointer(this->attribPositionLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
-void SkyLayer::renderSky() {
-   glUseProgram(program);
+void SkyLayer::renderProgram() {
+   glUseProgram(this->program);
 
-   rotationX += offsetX;
-   rotationMX->rotationX(rotationX);
+   this->listenContinouslyToCursor();
 
-   rotationY += offsetY;
-   rotationMY->rotationY(rotationY);
+   glBindBuffer(GL_ARRAY_BUFFER, this->bufferPosition);
+   glVertexAttribPointer(this->attribPositionLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-   u_swap1->multiplyMatrices(rotationMY, rotationMX);
-   u_swap2->multiplyMatrices(u_swap1, rotationMZ);
-   u_swap1->multiplyMatrices(u_swap2, translation);
+   this->cameraRotX.rotationX(this->pitch);
+   this->cameraRotY.rotationY(this->yaw);
+   this->cameraRotZ.rotationZ(this->roll);
 
-   u_swap2->inverseMatrix(u_swap1);
+   vector<float> quaternion = quaternionMatrix.quaternion();
+   vector<float> quaternionRot = quaternionMatrix.fromEuler(-this->pitch/M_PI*360.0f, this->yaw/M_PI*360, 0);
+   quaternionMatrix.fromQuat(quaternionRot);
 
-   glUniformMatrix4fv(matrixCameraLocation, 1, GL_FALSE, u_swap2->matrix);
+   this->cameraMatrix = this->cameraMatrix.inverseMatrix(this->quaternionMatrix);
+
+   glUniformMatrix4fv(unifCameraLoc, 1, GL_FALSE, cameraMatrix.matrix.data());
 
    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void SkyLayer::freeSky() {
-   delete u_swap1;
-   delete u_swap2;
-   delete rotationMX;
-   delete rotationMY;
-   delete rotationMZ;
-   delete translation;
-}
+void SkyLayer::freeProgram() {}

@@ -1,12 +1,12 @@
 SYSCONF_LINK = g++
 CPPFLAGS     = -std=c++11
 LDFLAGS      =
-LIBS         = -lm -lSOIL -lGL -lGLEW -lGLU -lglfw
+LIBS         = -lGL -lGLEW -lglfw
 
 DESTDIR = ./
-TARGET  = thruster
+TARGET  = Thruster
 
-OBJECTS := $(patsubst %.cpp,%.o,$(wildcard *.cpp))
+OBJECTS := $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 
 all: $(DESTDIR)$(TARGET)
 

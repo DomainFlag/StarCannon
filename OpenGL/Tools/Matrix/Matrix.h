@@ -6,7 +6,7 @@ using namespace std;
 
 class Matrix {
 public:
-	float * matrix = new float[16]{0};
+	vector<float> matrix = decltype(matrix)(16, 0);
 
 	Matrix();
 
@@ -26,11 +26,21 @@ public:
 
 	void projection(float x, float y, float z);
 
-	void multiplyMatrices(Matrix * mat1, Matrix * mat2);
+	void perspective(float fieldOfView, float aspect, float near, float far);
 
-	void multiplyVector(vector<float> vec, vector<float> & data);
+	Matrix operator * (const Matrix mat);
 
-	void inverseMatrix(Matrix * matt);
+	vector<float> multiplyVector(vector<float> vec);
+
+	Matrix inverseMatrix(Matrix matt);
+
+	vector<float> quaternion();
+
+	vector<float> fromEuler(float x, float y, float z);
+
+	void fromQuat(vector<float> quaternion);
+
+	vector<float> transformQuat(vector<float> vec, vector<float> quaternion);
 };
 
 #endif

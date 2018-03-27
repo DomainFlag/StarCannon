@@ -1,16 +1,12 @@
 #include <GL/glew.h>
-#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <map>
 #include <cmath>
-#include <assert.h>
-#include <unistd.h>
 #include <SOIL/SOIL.h>
 #include "Sky.h"
-#include "./../Tools/Matrix/Matrix.h"
 using namespace std;
 
 const GLFWvidmode * mode;
@@ -26,13 +22,13 @@ void input(GLFWwindow * window, int key, int action, int u, int i) {
 		case GLFW_KEY_W : {
 			if(skyLayer->translationZ < 1.0f)
 				skyLayer->translationZ += 0.05f;
-			skyLayer->translation->translation(0.0f, 0.0f, skyLayer->translationZ);
+			skyLayer->translation.translation(0.0f, 0.0f, skyLayer->translationZ);
 			break;
 		};
 		case GLFW_KEY_S : {
 			if(skyLayer->translationZ > -1.0f)
 				skyLayer->translationZ -= 0.05f;
-			skyLayer->translation->translation(0.0f, 0.0f, skyLayer->translationZ);
+			skyLayer->translation.translation(0.0f, 0.0f, skyLayer->translationZ);
 			break;
 		};
 		case GLFW_KEY_D : {
@@ -56,7 +52,7 @@ int main(int argc, char ** argv) {
 
 	mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
-	window = glfwCreateWindow(mode->width, mode->height, "Ocean rendering", glfwGetPrimaryMonitor(), NULL);
+	window = glfwCreateWindow(mode->width, mode->height, "Sky rendering", glfwGetPrimaryMonitor(), NULL);
 	if(!window) {
 		glfwTerminate();
 		return -1;
@@ -82,13 +78,13 @@ int main(int argc, char ** argv) {
 	while(!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		sky.renderSky();
+		sky.renderProgram();
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
-	sky.freeSky();
+	sky.freeProgram();
 
 	glfwTerminate();
 	return 0;

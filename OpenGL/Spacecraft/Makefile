@@ -1,9 +1,9 @@
 COMMAND = g++ -g
 FLAGS = --std=c++11 
-LIBS = 
+LIBS = -lGL -lGLEW -lglfw
 
 DESTDIR = ./
-TARGET  = main
+TARGET  = Spacecraft
 
 OBJECTS := $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 

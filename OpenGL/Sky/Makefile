@@ -1,10 +1,10 @@
 SYSCONF_LINK = g++
 CPPFLAGS     = -std=c++11
 LDFLAGS      =
-LIBS         = -lm -lSOIL -lGL -lGLEW -lglut -lGLU -lglfw
+LIBS         = -lm -lSOIL -lGL -lGLEW -lglfw
 
 DESTDIR = ./
-TARGET  = sky
+TARGET  = Sky
 
 OBJECTS := $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 
