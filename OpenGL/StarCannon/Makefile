@@ -8,10 +8,19 @@ TARGET  = Starcannon
 
 OBJECTS := $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 
+SOURCE_FILES = \
+    ./../../Audio/other/common.cpp \
+    ./../../Audio/other/common_platform.cpp
+
+INCLUDE_DIRS = \
+    -I./../../Audio/src/inc
+
+LOWLEVEL_LIB = ./../../Audio/lib/libfmod.so
+
 all: Starcannon
 
-Starcannon: Game.o Terrain.o Sky.o Thruster.o Spacecraft.o Matrix.o Shader.o
-	$(GCC) -o Starcannon Game.o Terrain.o Sky.o Thruster.o Spacecraft.o Shader.o Matrix.o $(LIBS)
+Starcannon: Game.o Terrain.o Sky.o Thruster.o Spacecraft.o CommonPlatform.o Common.o Audio.o Matrix.o Shader.o
+	$(GCC) -pthread -o Starcannon Game.o Terrain.o Sky.o Thruster.o Spacecraft.o CommonPlatform.o Common.o Audio.o Shader.o Matrix.o $(LIBS) -Wl,-rpath=\$$ORIGIN/$(dir ${LOWLEVEL_LIB}) ${LOWLEVEL_LIB} ${INCLUDE_DIRS}
 
 Game.o: Game.cpp
 	$(GCC) $(CPPFLAGS) -c Game.cpp -o Game.o
@@ -27,6 +36,15 @@ Terrain.o: ./../Terrain/Terrain.cpp
 
 Sky.o: ./../Sky/Sky.cpp
 	$(GCC) $(CPPFLAGS) -c ./../Sky/Sky.cpp -o Sky.o
+
+Audio.o: ./../../Audio/Audio.cpp
+	$(GCC) $(CPPFLAGS) -c ./../../Audio/Audio.cpp -o Audio.o
+
+CommonPlatform.o: ./../../Audio/other/common_platform.cpp
+	$(GCC) $(CPPFLAGS) -c ./../../Audio/other/common_platform.cpp -o CommonPlatform.o
+
+Common.o: ./../../Audio/other/common.cpp
+	$(GCC) $(CPPFLAGS) -c ./../../Audio/other/common.cpp -o Common.o
 
 Shader.o: ./../Shader/Shader.cpp
 	$(GCC) $(CPPFLAGS) -c ./../Shader/Shader.cpp -o Shader.o

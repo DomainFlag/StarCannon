@@ -1,9 +1,9 @@
-NAME = play_sound
+NAME = Audio
 
-FLAGS = -std=c++11
+FLAGS = --std=c++11
 
 SOURCE_FILES = \
-    ./play_sound.cpp \
+    ./Audio.cpp \
     ./other/common.cpp \
     ./other/common_platform.cpp
 

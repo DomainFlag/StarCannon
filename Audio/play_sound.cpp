@@ -92,34 +92,6 @@ void playAudio(map<string, Song> songs, int * pipe_fd) {
                 break;
             }
 
-            // if(strcmp(key, "songp0") == 0)
-            //     songs["kick.wav"]->setPaused(true);
-            // else if(strcmp(key, "songp1") == 0)
-            //     songs["obstacle1.mp3"]->setPaused(true); 
-            // else if(strcmp(key, "songp2") == 0)
-            //     songs["pjano.wav"]->setPaused(true); 
-            // else if(strcmp(key, "songr0") == 0)
-            //     songs["kick.wav"]->setPaused(false);
-            // else if(strcmp(key, "songr1") == 0)
-            //     songs["obstacle1.mp3"]->setPaused(false);
-            // else if(strcmp(key, "songr2") == 0)
-            //     songs["pjano.wav"]->setPaused(false);
-            // else if(strcmp(key, "songs0") == 0) {
-            //     result = system->playSound(sound1, 0, false, &songs["kick.wav"]);
-            //     ERRCHECK(result);
-            // } else if(strcmp(key, "songs1") == 0) {
-            //     result = songs["obstacle1.mp3"]->isPlaying(&playing);
-            //     if((result != FMOD_OK) && (result != FMOD_ERR_INVALID_HANDLE) && (result != FMOD_ERR_CHANNEL_STOLEN)) {
-            //         ERRCHECK(result);
-            //     } else if(playing) {
-            //         songs["obstacle1.mp3"]->stop();
-            //     }
-            //     result = system->playSound(sound2, 0, false, &songs["obstacle1.mp3"]);
-            //     ERRCHECK(result);
-            // } else if(strcmp(key, "songs2") == 0) {
-            //     result = system->playSound(sound3, 0, false, &songs["pjano.wav"]);
-            //     ERRCHECK(result);
-            // };
         }
     }
 
@@ -152,7 +124,6 @@ int main() {
     s << "resum_song_[0-" << songsLength << "] - resumes a song from 0 to " << songsLength << " \n";
     cout << s.str() << endl;
 
-    int pipe_fd[2];
     pipe(pipe_fd);
 
     pid_t pid = fork();
@@ -175,93 +146,6 @@ int main() {
             }
         }
     }
-
-    // do
-    // {
-    //     Common_Update();
-
-    //     if (Common_BtnPress(BTN_ACTION1))
-    //     {
-    //         result = system->playSound(sound1, 0, false, &channel);
-    //         ERRCHECK(result);
-    //     }
-
-    //     if (Common_BtnPress(BTN_ACTION2))
-    //     {
-    //         result = system->playSound(sound2, 0, false, &channel);
-    //         ERRCHECK(result);
-    //     }
-
-    //     if (Common_BtnPress(BTN_ACTION3))
-    //     {
-    //         result = system->playSound(sound3, 0, false, &channel);
-    //         ERRCHECK(result);
-    //     }
-
-    //     result = system->update();
-    //     ERRCHECK(result);
-
-    //     {
-    //         unsigned int ms = 0;
-    //         unsigned int lenms = 0;
-    //         bool         playing = 0;
-    //         bool         paused = 0;
-    //         int          channelsplaying = 0;
-
-    //         if (channel)
-    //         {
-    //             FMOD::Sound *currentsound = 0;
-
-    //             result = channel->isPlaying(&playing);
-    //             if ((result != FMOD_OK) && (result != FMOD_ERR_INVALID_HANDLE) && (result != FMOD_ERR_CHANNEL_STOLEN))
-    //             {
-    //                 ERRCHECK(result);
-    //             }
-
-    //             result = channel->getPaused(&paused);
-    //             if ((result != FMOD_OK) && (result != FMOD_ERR_INVALID_HANDLE) && (result != FMOD_ERR_CHANNEL_STOLEN))
-    //             {
-    //                 ERRCHECK(result);
-    //             }
-
-    //             result = channel->getPosition(&ms, FMOD_TIMEUNIT_MS);
-    //             if ((result != FMOD_OK) && (result != FMOD_ERR_INVALID_HANDLE) && (result != FMOD_ERR_CHANNEL_STOLEN))
-    //             {
-    //                 ERRCHECK(result);
-    //             }
-               
-    //             channel->getCurrentSound(&currentsound);
-    //             if (currentsound)
-    //             {
-    //                 result = currentsound->getLength(&lenms, FMOD_TIMEUNIT_MS);
-    //                 if ((result != FMOD_OK) && (result != FMOD_ERR_INVALID_HANDLE) && (result != FMOD_ERR_CHANNEL_STOLEN))
-    //                 {
-    //                     ERRCHECK(result);
-    //                 }
-    //             }
-    //         }
-
-    //         system->getChannelsPlaying(&channelsplaying, NULL);
-    //     }
-
-    //     Common_Sleep(50);
-    // } while (!Common_BtnPress(BTN_QUIT));
-
-    /*
-        Shut down
-    */
-    // result = sound1->release();
-    // ERRCHECK(result);
-    // result = sound2->release();
-    // ERRCHECK(result);
-    // result = sound3->release();
-    // ERRCHECK(result);
-    // result = system->close();
-    // ERRCHECK(result);
-    // result = system->release();
-    // ERRCHECK(result);
-
-    // Common_Close();
 
     return 0;
 }

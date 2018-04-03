@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <cmath>
+#include "./../../Audio/Audio.h"
 #include "./../Tools/Matrix/Matrix.h"
 #include "./../Terrain/Terrain.h"
 #include "./../Sky/Sky.h"
@@ -13,6 +14,8 @@ using namespace std;
 
 const GLFWvidmode * mode;
 
+Audio * audioP;
+
 SkyLayer * skyP;
 Thruster * thrusterP;
 Spacecraft * spacecraftP;
@@ -21,6 +24,8 @@ TerrainLayer * terrainP;
 void input(GLFWwindow * window, int key, int action, int u, int i) {
 	terrainP->keyboardListener(window, key, action, u, i);
 	skyP->keyboardListener(window, key, action, u, i);
+
+	audioP->keyboardListener(window, key, action, u, i);
 };
 
 void cursor(GLFWwindow * window, double x, double y) {
@@ -49,6 +54,9 @@ int main(int argc, char ** argv) {
 	if(glewInit() != GLEW_OK) {
 		std::cout << "error..!!" << std::endl;
 	}
+
+	Audio audio;
+	audioP = &audio;
 
 	// TerrainLayer terrain(mode);
 	SkyLayer sky(mode);
