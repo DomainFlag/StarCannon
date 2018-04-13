@@ -31,26 +31,32 @@ let matrices = {
             x, y, z, 1
         ];
     },
-    "rotationX": function(x, y) {
+    "rotationX": function(rot) {
+        let c = Math.cos(rot);
+        let s = Math.sin(rot);
         return [
             1, 0, 0, 0,
-            0, y, -x, 0,
-            0, x, y, 0,
+            0, c, -s, 0,
+            0, s, c, 0,
             0, 0, 0, 1
         ];
     },
-    "rotationY": function(x, y) {
+    "rotationY": function(rot) {
+        let c = Math.cos(rot);
+        let s = Math.sin(rot);
         return [
-            y, 0, -x, 0,
+            c, 0, -s, 0,
             0, 1, 0, 0,
-            x, 0, y, 0,
+            s, 0, c, 0,
             0, 0, 0, 1
         ];
     },
-    "rotationZ": function(x, y) {
+    "rotationZ": function(rot) {
+        let c = Math.cos(rot);
+        let s = Math.sin(rot);
         return [
-            y, -x, 0, 0,
-            x, y, 0, 0,
+            c, -s, 0, 0,
+            s, c, 0, 0,
             0, 0, 1, 0,
             0, 0, 0, 1
         ];
@@ -70,7 +76,7 @@ let matrices = {
             f/aspect, 0, 0, 0,
             0, f, 0, 0,
             0, 0, (near+far)*rangeInv, -1,
-            0, 0, near*far*rangeInv*2, 0
+            0, 0,  near*far*rangeInv*2, 0
         ];
     },
     "idMatrix" : function() {
@@ -80,6 +86,73 @@ let matrices = {
             0, 0, 1, 0,
             0, 0, 0, 1
         ]
+    },
+    "quarternion" : function() {
+        let out = [0, 0, 0, 0];
+        out[0] = 0;
+        out[1] = 0;
+        out[2] = 0;
+        out[3] = 1;
+        return out;
+    },
+    "fromEuler" : function(out, x, y, z) {
+        let halfToRad = 0.5 * Math.PI / 180.0;
+        x *= halfToRad;
+        y *= halfToRad;
+        z *= halfToRad;
+        let sx = Math.sin(x);
+        let cx = Math.cos(x);
+        let sy = Math.sin(y);
+        let cy = Math.cos(y);
+        let sz = Math.sin(z);
+        let cz = Math.cos(z);
+        out[0] = sx * cy * cz - cx * sy * sz;
+        out[1] = cx * sy * cz + sx * cy * sz;
+        out[2] = cx * cy * sz - sx * sy * cz;
+        out[3] = cx * cy * cz + sx * sy * sz;
+        return out;
+    },
+    "fromQuat" : function(out, q) {
+        let x = q[0], y = q[1], z = q[2], w = q[3];
+        let x2 = x + x;
+        let y2 = y + y;
+        let z2 = z + z;
+        let xx = x * x2;
+        let yx = y * x2;
+        let yy = y * y2;
+        let zx = z * x2;
+        let zy = z * y2;
+        let zz = z * z2;
+        let wx = w * x2;
+        let wy = w * y2;
+        let wz = w * z2;
+        out[0] = 1 - yy - zz;
+        out[1] = yx + wz;
+        out[2] = zx - wy;
+        out[3] = 0;
+        out[4] = yx - wz;
+        out[5] = 1 - xx - zz;
+        out[6] = zy + wx;
+        out[7] = 0;
+        out[8] = zx + wy;
+        out[9] = zy - wx;
+        out[10] = 1 - xx - yy;
+        out[11] = 0;
+        out[12] = 0;
+        out[13] = 0;
+        out[14] = 0;
+        out[15] = 1;
+        return out;
+    },
+    "lookAt" : function(cameraPosition, target, up) {
+        let zAxis = normalize(substractValues(cameraPosition, target));
+        let xAxis = cross(up, zAxis);
+        let yAxis = cross(zAxis, xAxis);
+        return [
+            xAxis[0], xAxis[1], xAxis[2], 0,
+            yAxis[0], yAxis[1], yAxis[2], 0,
+            zAxis[0], zAxis[1], zAxis[2], 0,
+            cameraPosition[0], cameraPosition[1], cameraPosition[2], 1];
     }
 };
 
@@ -99,14 +172,82 @@ function multiplyMatrices() {
     return mat;
 }
 
+function cross(a, b) {
+    return [
+        a[1]*b[2]-a[2]*b[1],
+        a[2]*b[0]-a[0]*b[2],
+        a[0]*b[1]-a[1]*b[0]
+    ];
+}
+
+function substractValues(a, b) {
+    return [
+        a[0]-b[0],
+        a[1]-b[1],
+        a[2]-b[2]
+    ];
+}
+
+function dot(a, b) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+function angle(a, b) {
+    normalize(a, a);
+    normalize(b, b);
+    let cosine = dot(a, b);
+    if(cosine > 1.0) {
+        return 0;
+    }
+    else if(cosine < -1.0) {
+        return Math.PI;
+    } else {
+        return Math.acos(cosine);
+    }
+}
+
+function normalize(v) {
+    let length = Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+    if(length > 0.00001)
+        return [v[0]/length, v[1]/length, v[2]/length];
+    else return [0, 0, 0];
+}
+
+function transformQuat(out, a, q) {
+    // benchmarks: http://jsperf.com/quaternion-transform-vec3-implementations
+    let x = a[0], y = a[1], z = a[2];
+    let qx = q[0], qy = q[1], qz = q[2], qw = q[3];
+    // calculate quat * vec
+    let ix = qw * x + qy * z - qz * y;
+    let iy = qw * y + qz * x - qx * z;
+    let iz = qw * z + qx * y - qy * x;
+    let iw = -qx * x - qy * y - qz * z;
+    // calculate result * inverse quat
+    out[0] = ix * qw + iw * -qx + iy * -qz - iz * -qy;
+    out[1] = iy * qw + iw * -qy + iz * -qx - ix * -qz;
+    out[2] = iz * qw + iw * -qz + ix * -qy - iy * -qx;
+    return out;
+}
+
 function multiplyVector(matrix, vector) {
     let vectorProvisional = [0, 0, 0, 0];
-    for (let g = 0; g < 4; g++) {
-        for (let h = 0; h < 4; h++) {
+    for(let g = 0; g < 4; g++) {
+        for(let h = 0; h < 4; h++) {
             vectorProvisional[g] += matrix[g*4+h]*vector[h];
         }
     }
-    return vectorProvisional.slice(0, 3);
+    // return vectorProvisional.slice(0, 3);
+    return vectorProvisional;
+}
+
+function transposeMatrix(matrix) {
+    let mat = matrices["idMatrix"]();
+    for(let g = 0; g < 4; g++) {
+        for(let h = 0; h < 4; h++) {
+            mat[g*4+h] = matrix[h*4+g];
+        }
+    }
+    return mat;
 }
 
 function inverseMatrix(m) {

@@ -12,7 +12,19 @@ http.createServer(function(request, response) {
 
 router.add("GET", /^\/texture/, function(request, response) {
     let query = require("url").parse(request.url, true).query;
-    fs.readFile("./textures/" + query.filename, function(err, data) {
+    fs.readFile("./Textures/" + query.filename, function(err, data) {
+        response.writeHead("200", {
+            "Content-Type" : "image/jpeg",
+            "Access-Control-Allow-Origin" : "*"
+        });
+        response.write(data);
+        response.end();
+    });
+});
+
+router.add("GET", /^\/heightmap/, function(request, response) {
+    let query = require("url").parse(request.url, true).query;
+    fs.readFile("./Heightmap/" + query.filename, function(err, data) {
         response.writeHead("200", {
             "Content-Type" : "image/jpeg",
             "Access-Control-Allow-Origin" : "*"

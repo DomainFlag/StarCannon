@@ -6,7 +6,7 @@ let F4 = (Math.sqrt(5.0) - 1.0) / 4.0;
 let G4 = (5.0 - Math.sqrt(5.0)) / 20.0;
 
 function SimplexNoise(randomOrSeed) {
-    var random;
+    let random;
     if (typeof randomOrSeed == 'function') {
         random = randomOrSeed;
     }
@@ -22,8 +22,8 @@ function SimplexNoise(randomOrSeed) {
         this.perm[i] = this.p[i & 255];
         this.permMod12[i] = this.perm[i] % 12;
     }
-
 }
+
 SimplexNoise.prototype = {
     grad3: new Float32Array([1, 1, 0,
         -1, 1, 0,
@@ -429,4 +429,15 @@ function masher() {
         }
         return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
     };
+}
+
+// amd
+if (typeof define !== 'undefined' && define.amd) define(function() {return SimplexNoise;});
+// common js
+if (typeof exports !== 'undefined') exports.SimplexNoise = SimplexNoise;
+// browser
+else if (typeof window !== 'undefined') window.SimplexNoise = SimplexNoise;
+// nodejs
+if (typeof module !== 'undefined') {
+    module.exports = SimplexNoise;
 }
