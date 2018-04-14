@@ -9,7 +9,7 @@ let sliders = [
         label : "Complexity Level",
         valueStart : 0,
         valueEnd : 12,
-        value : 5,
+        value : 9,
         measurement : "dg"
     }, {
         label : "cameraX",
@@ -105,6 +105,8 @@ function createProgram(gl, vertexShader, fragmentShader) {
 function drawScene(gl) {
     let depth = Math.floor(Number(sliders[0].value));
 
+    gl.vertexAttribPointer(attribPositionLoc, 3, gl.FLOAT, false, 0, 0);
+
     let cameraTranslation = matrices["translation"](sliders[1].value, sliders[2].value, sliders[3].value);
     let cameraRotX = matrices["rotationX"](sliders[4].value);
     let cameraRotY = matrices["rotationY"](sliders[5].value);
@@ -118,7 +120,6 @@ function drawScene(gl) {
     gl.uniformMatrix4fv(uniformCameraLocation, false, cameraMatrix);
 
     gl.drawArrays(gl.TRIANGLES, 0, Math.pow(2, 2*depth)*6);
-    console.log("Drawn");
 }
 
 let uniformProjectionLocation, uniformCameraLocation;
@@ -163,10 +164,8 @@ function startWebGL(gl) {
     gl.enableVertexAttribArray(attribPositionLoc);
 
     let depth = Math.floor(Number(sliders[0].value));
-    let data = lod.tree.initReadLevel(gl, depth);
+    let data = lod.tree.readDepth(gl, depth);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.DYNAMIC_DRAW);
-
-    gl.vertexAttribPointer(attribPositionLoc, 3, gl.FLOAT, false, 0, 0);
 
     drawScene(gl);
 }

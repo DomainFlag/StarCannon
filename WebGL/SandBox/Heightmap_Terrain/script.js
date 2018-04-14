@@ -81,7 +81,9 @@ function drawScene(gl) {
         let offset = 2.0/min;
         for(let g = 0; g < min; g++) {
             for (let h = 0; h < min; h++) {
-                info.push(offset * g - 1.0, data[g * min + h] / 255 - 0.5, offset * h - 1.0);
+                let vec = [];
+                vec.push(offset * g - 1.0, data[g * min + h] / 255 - 0.5, offset * h - 1.0);
+                info.push(vec);
             }
         }
 
