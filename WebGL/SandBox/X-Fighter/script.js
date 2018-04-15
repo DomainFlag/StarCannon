@@ -7,81 +7,87 @@ gl.canvas.height = gl.canvas.getBoundingClientRect().height;
 let sliders = [
     {
         label : "translationX",
-        valueStart : 0,
-        valueEnd : gl.canvas.width,
-        valueCurrent : 0,
+        valueStart : -30,
+        valueEnd : 30,
+        value : 0,
         measurement : "px"
     }, {
         label : "translationY",
-        valueStart : 0,
-        valueEnd : gl.canvas.height,
-        valueCurrent : 0,
+        valueStart : -30,
+        valueEnd : 30,
+        value : 4.8,
         measurement : "px"
     }, {
         label : "translationZ",
-        valueStart : 0,
-        valueEnd : 400,
-        valueCurrent : 0,
+        valueStart : -30,
+        valueEnd : 30,
+        value : -30,
         measurement : "px"
     }, {
         label : "rotationX",
         valueStart : 0,
-        valueEnd : 360,
-        valueCurrent : 0,
+        valueEnd : 2*Math.PI,
+        value : 0,
         measurement : "°"
     }, {
         label : "rotationY",
         valueStart : 0,
-        valueEnd : 360,
-        valueCurrent : 0,
+        valueEnd : 2*Math.PI,
+        value : 2.32,
         measurement : "°"
     }, {
         label : "rotationZ",
         valueStart : 0,
-        valueEnd : 360,
-        valueCurrent : 0,
+        valueEnd : 2*Math.PI,
+        value : 0,
         measurement : "°"
-    }, {
-        label : "scaleX",
-        valueStart : -10,
-        valueEnd : 10,
-        valueCurrent : 1,
-        measurement : "times"
-    }, {
-        label : "scaleY",
-        valueStart : -10,
-        valueEnd : 10,
-        valueCurrent : 1,
-        measurement : "times"
-    }, {
-        label : "scaleZ",
-        valueStart : -10,
-        valueEnd : 10,
-        valueCurrent : 1,
-        measurement : "times"
     }
 ];
 
-setSliders(sliders, drawScene, gl);
+setSliders(sliders, drawScene, true, gl);
 
 let vertexShaderSource = `
-attribute vec4 aPosition;
-attribute vec4 aColor;
-attribute vec2 aTextureCoord;
-uniform mat4 uMatrix;
-varying vec2 vTextureCoord;
+attribute vec4 a_position;
+attribute vec3 a_texture;
+
+uniform mat4 u_camera;
+uniform mat4 u_projection;
+
+varying vec3 v_texture;
+
 void main() {
-    gl_Position = vec4((uMatrix*aPosition).xyz, 1);
-    vTextureCoord = aTextureCoord;
+    vec4 projection = u_projection*u_camera*a_position;
+    gl_Position = projection;
+    
+    v_texture = a_texture;
 }
 `;
 
 let fragmentShaderSource = `
 precision mediump float;
-varying vec2 vTextureCoord;
-uniform sampler2D uSampler;
+
+uniform sampler2D u_texture[8];
+varying vec3 v_texture;
+
 void main() {
-    gl_FragColor = vec4(0.2, 0.1, 0, 1);
+    int texUnit = int(v_texture.z);
+    if(texUnit == 0)
+        gl_FragColor = texture2D(u_texture[0], vec2(1, 1)-v_texture.xy);
+    else if(texUnit == 1)
+        gl_FragColor = texture2D(u_texture[1], vec2(1, 1)-v_texture.xy);
+    else if(texUnit == 2)
+        gl_FragColor = texture2D(u_texture[2], vec2(1, 1)-v_texture.xy);
+    else if(texUnit == 3)
+        gl_FragColor = texture2D(u_texture[3], vec2(1, 1)-v_texture.xy);
+    else if(texUnit == 4)
+        gl_FragColor = texture2D(u_texture[4], vec2(1, 1)-v_texture.xy);
+    else if(texUnit == 5)
+        gl_FragColor = texture2D(u_texture[5], vec2(1, 1)-v_texture.xy);
+    else if(texUnit == 6)
+        gl_FragColor = texture2D(u_texture[6], vec2(1, 1)-v_texture.xy);
+    else if(texUnit == 7)
+        gl_FragColor = texture2D(u_texture[7], vec2(1, 1)-v_texture.xy);
+    else  gl_FragColor = texture2D(u_texture[3], v_texture.xy);
 } 
 `;
 
@@ -102,172 +108,32 @@ function createProgram(gl, vertexShader, fragmentShader) {
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
     let success = gl.getProgramParameter(program, gl.LINK_STATUS);
-    if(success)
+    if (success)
         return program;
     console.log(gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
 }
 
-let colors = [];
-
-[
-    [1, 0, 0],
-    [0, 1, 0],
-    [0, 0, 1],
-    [1, 1, 0],
-    [0, 1, 1],
-    [1, 0, 1]
-].forEach(function(color) {
-    for(let g = 0; g < 6; g++)
-        colors = colors.concat(color);
-});
-
-
-let data = {
-    obj : {
-        "vertices" : null,
-        "texture" : null
-    }, texture : null
-};
-
-(function() {
-    let promiseVertices = new Promise(function(resolve, reject) {
-        let req = new XMLHttpRequest();
-        req.open("GET", "http://localhost:8000/obj?filename=X-fighter/Viper-mk-IV-fighter.obj", true);
-        req.addEventListener("load", function(e) {
-            if(req.status < 400) {
-                data.obj = JSON.parse(req.responseText);
-                for(let g = 0; g < data.obj.vertices.length; g++)
-                    data.obj.vertices[g] = (data.obj.vertices[g]*2+1.0)*100;
-                resolve();
-            } else {
-                reject(req.status);
-            }
-        });
-        req.send();
-    });
-
-    let promiseTexture = new Promise(function(resolve, reject) {
-        let img = document.createElement("img");
-        img.crossOrigin = "anonymous";
-        img.src = "http://localhost:8000/texture?filename=Cube_Redish/Cube_Textured.jpg";
-        img.addEventListener("load", function(e) {
-            data.img = img;
-            resolve();
-        });
-    });
-
-    Promise.all([promiseVertices]).then(function() {
-        if(gl)
-            initGL(gl);
-    }).catch(function(error) {
-        console.log(error);
-    });
-})();
-
-function Matrix(type, x, y, z) {
-    this.dim = 4;
-    if(type === "scaling") {
-        this.matrix = [
-            x, 0, 0, 0,
-            0, y, 0, 0,
-            0, 0, z, 0,
-            0, 0, 0, 1
-        ]
-    } else if(type === "translation") {
-        this.matrix = [
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            x, y, z, 1
-        ]
-    } else if(type === "translationOForth") {
-        this.matrix = [
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            -x, -y, -z, 1
-        ]
-    } else if(type === "translationOBack") {
-        this.matrix = [
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            x, y, z, 1
-        ]
-    } else if(type === "rotationX") {
-        this.matrix = [
-            1, 0, 0, 0,
-            0, y, -x, 0,
-            0, -x, y, 0,
-            0, 0, 0, 1
-        ]
-    } else if(type === "rotationY") {
-        this.matrix = [
-            y, 0, -x, 0,
-            0, 1, 0, 0,
-            x, 0, y, 0,
-            0, 0, 0, 1
-        ]
-    } else if(type === "rotationZ") {
-        this.matrix = [
-            y, -x, 0, 0,
-            x, y, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        ]
-    } else if(type === "projection") {
-        this.matrix = [
-            2/x, 0, 0, 0,
-            0, -2/y, 0, 0,
-            0, 0, 2/z, 0,
-            -1, 1, -1, 1
-        ]
-    } else if(type === "idMatrix") {
-        this.matrix = [
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        ]
-    }
-}
-
-Matrix.prototype.multiply = function(m2) {
-    let mat = new Matrix("idMatrix");
-    for(let g = 0; g < this.dim; g++) {
-        for(let h = 0; h < this.dim; h++) {
-            mat.matrix[g*this.dim+h] = 0;
-            for(let i = 0; i < this.dim; i++) {
-                mat.matrix[g*this.dim+h] += this.matrix[g*this.dim+i]*m2.matrix[i*this.dim+h];
-            }
-        }
-    }
-    return mat;
-};
+let objHttp = new ObjHttp(initGL, gl, "X-Fighter");
 
 function drawScene(gl) {
-    gl.enable(gl.CULL_FACE);
-    gl.enable(gl.DEPTH_TEST);
-    gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    let projection = new Matrix("projection", gl.canvas.width, gl.canvas.height, 3200);
-    let translationForthO = new Matrix("translationOForth", 350, 350, 50);
-    let translationBackO = new Matrix("translationOBack", 350, 350, 50);
-    let translationM = new Matrix("translation", sliders[0].valueCurrent, sliders[1].valueCurrent, sliders[2].valueCurrent);
-    let rotationMX = new Matrix("rotationX", Math.sin(sliders[3].valueCurrent/360*2*Math.PI), Math.cos(sliders[3].valueCurrent/360*2*Math.PI));
-    let rotationMY = new Matrix("rotationY", Math.sin(sliders[4].valueCurrent/360*2*Math.PI), Math.cos(sliders[4].valueCurrent/360*2*Math.PI));
-    let rotationMZ = new Matrix("rotationZ", Math.sin(sliders[5].valueCurrent/360*2*Math.PI), Math.cos(sliders[5].valueCurrent/360*2*Math.PI));
-    let scalingM = new Matrix("scaling", sliders[6].valueCurrent, sliders[7].valueCurrent, sliders[8].valueCurrent);
+    let perspective = matrices["perspective"](Math.PI/3.0, gl.canvas.width/gl.canvas.height, 0.0001, 200);
 
-    gl.uniformMatrix4fv(uniformMatrixLocation, false, translationForthO.multiply(scalingM).multiply(rotationMZ).multiply(rotationMY).multiply(rotationMX).multiply(translationM).multiply(translationBackO).multiply(projection).matrix);
+    let translM = matrices["translation"](sliders[0].value, sliders[1].value, sliders[2].value);
+    let rotX = matrices["rotationX"](sliders[3].value);
+    let rotY = matrices["rotationY"](sliders[4].value);
+    let rotZ = matrices["rotationZ"](sliders[5].value);
 
-    gl.drawArrays(gl.TRIANGLES, 0, data.obj.vertices.length/3);
+    let viewMatrix = multiplyMatrices(rotX, rotY, rotZ, translM);
+    let cameraMatrix = inverseMatrix(viewMatrix);
+
+    gl.uniformMatrix4fv(unifCameraLoc, false, viewMatrix);
+    gl.uniformMatrix4fv(unifProjectionLoc, false, perspective);
+
+    gl.drawArrays(gl.TRIANGLES, 0, objHttp.data.vertices.geometricVertices.length/3);
 }
-
-let uniformMatrixLocation;
-let vertexPositionLocation;
 
 function resize(gl) {
     let realToCSSPixels = window.devicePixelRatio;
@@ -283,45 +149,57 @@ function resize(gl) {
     }
 }
 
+let unifCameraLoc, unifProjectionLoc;
+let attribPosLoc, attribTexLoc;
 
-function initGL(gl) {
+function initGL(gl, data) {
     resize(gl);
     let vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
 
     let program = createProgram(gl, vertexShader, fragmentShader);
 
-    vertexPositionLocation = gl.getAttribLocation(program, "aPosition");
-    uniformMatrixLocation = gl.getUniformLocation(program, "uMatrix");
-    // let vertexTextureLocation = gl.getAttribLocation(program, "aTextureCoord");
+    gl.useProgram(program);
 
-    let positionBuffer = gl.createBuffer();
-    let colorBuffer = gl.createBuffer();
-    let textureBuffer = gl.createBuffer();
-    // let texture = gl.createTexture();
-    // gl.bindTexture(gl.TEXTURE_2D, texture);
-    // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data.img);
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    attribPosLoc = gl.getAttribLocation(program, "a_position");
+    attribTexLoc = gl.getAttribLocation(program, "a_texture");
+    unifCameraLoc = gl.getUniformLocation(program, "u_camera");
+    unifProjectionLoc = gl.getUniformLocation(program, "u_projection");
 
-    // gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+    let posBuffer = gl.createBuffer();
+    let texBuffer = gl.createBuffer();
 
+    data.textures.forEach((texture, ind) => {
+        let unifTexLoc = gl.getUniformLocation(program, "u_texture[" + ind + "]");
+        gl.uniform1i(unifTexLoc, ind);
+        gl.activeTexture(gl.TEXTURE0+ind);
+
+        let tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture);
+    });
+
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
+    gl.clearColor(0, 0, 0, 0);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-    gl.useProgram(program);
-    gl.enableVertexAttribArray(vertexPositionLocation);
-    // gl.enableVertexAttribArray(vertexTextureLocation);
+    gl.enableVertexAttribArray(attribPosLoc);
+    gl.enableVertexAttribArray(attribTexLoc);
 
-    // gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
-    // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.obj.texture), gl.STATIC_DRAW);
-    // gl.vertexAttribPointer(vertexTextureLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.vertices.geometricVertices), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(attribPosLoc, 3, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.obj.vertices), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(vertexPositionLocation, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data.vertices.textureVertices), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(attribTexLoc, 3, gl.FLOAT, false, 0, 0);
 
-    drawScene(gl);
+    drawScene(gl, data);
 }

@@ -107,21 +107,6 @@ function createProgram(gl, vertexShader, fragmentShader) {
     gl.deleteProgram(program);
 }
 
-// let colors = [];
-//
-// [
-//     [1, 0, 0],
-//     [0, 1, 0],
-//     [0, 0, 1],
-//     [1, 1, 0],
-//     [0, 1, 1],
-//     [1, 0, 1]
-// ].forEach(function(color) {
-//     for(let g = 0; g < 6; g++)
-//         colors = colors.concat(color);
-// });
-
-
 let data = {
     obj : {
         "vertices" : null,
