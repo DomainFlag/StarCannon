@@ -8,6 +8,13 @@
  * terrain within the the visible area not clipped by the frustum.
  */
 
+const orientation = {
+    0 : "top_left",
+    1 : "top_right",
+    2 : "bottom_left",
+    3 : "bottom_right"
+};
+
 /**
  * Containing terrain 2D Box that spans from [x0, x1] to [y0, y1], inclusive
  * where x and y corresponds to cols and rows respectively.
@@ -15,9 +22,11 @@
  * @param y0 Minimal dim value on Y-axis
  * @param x1 Maximum dim value on X-axis
  * @param y1 Maximum dim value on Y-axis
+ * @param direction ...
  * @constructor
  */
-function Box(x0, y0, x1, y1) {
+function Box(x0, y0, x1, y1, direction) {
+    this.direction = orientation[direction];
     this.x0 = x0;
     this.y0 = y0;
     this.x1 = x1;
@@ -48,7 +57,7 @@ Box.prototype.getPartitions = function() {
         for(let h = 0; h < 2; h++) {
             xMax = Math.min(this.x0+partX*(h+1), this.x1);
             yMax = Math.min(this.y0+partY*(g+1), this.y1);
-            boxes.push(new Box(this.x0+partX*h, this.y0+partY*g, xMax, yMax));
+            boxes.push(new Box(this.x0+partX*h, this.y0+partY*g, xMax, yMax, g*2+h));
         }
     }
 
@@ -87,7 +96,8 @@ function QuadTree(mesh) {
     this.cols = Math.sqrt(this.mesh.length);
     this.rows = this.cols;
 
-    this.depth =  Math.floor(Math.log2(this.cols))+1;
+    this.depth =  Math.floor(Math.log2(this.cols))-1;
+    this.section = 1.0/this.depth;
 
     this.fillTree(this.tree, this.depth, new Box(0, 0, this.rows-1, this.cols-1));
 }
@@ -123,37 +133,17 @@ QuadTree.prototype.fillTree = function(currentNode, depth, currentBox) {
 };
 
 /**
- * Check if a given vector coord is given is within the X-axis [-1, 1],
- * Y-axis [-1, 1], Z-axis (0, -1] range given that perspective matrix is
- * used for coordinates projection.
- * @param vector
- * @param perspective
- * @returns {boolean}
- */
-QuadTree.prototype.checkIfInFrustum = function(vector, perspective) {
-    let result = multiplyVector(perspective, vector);
-
-    for (let g = 0; g < 3; g++)
-        result[g] *= result[3];
-
-    return (result[0] >= -1 && result[0] <= 1 &&
-        result[1] >= -1 && result[1] <= 1 &&
-        result[2] < 0);
-};
-
-/**
  * Initialize the currentNode recursively with all 4 root's children.
  * Clear the data var to be filled with new data.
  * Returns the data to the WebGL program.
- * @param gl
  * @param depth
  * @param currentNode
  * @returns {Array}
  */
-QuadTree.prototype.readDepth = function(gl, depth, currentNode = this.tree[0].children) {
+QuadTree.prototype.readDepth = function(depth, currentNode = this.tree[0].children) {
     this.data.length = 0;
     for(let g = 0; g < 4; g++)
-        this.readLevel(gl, depth-1, currentNode[g]);
+        this.readLevel(depth-1, currentNode[g]);
 
     return this.data;
 };
@@ -161,18 +151,85 @@ QuadTree.prototype.readDepth = function(gl, depth, currentNode = this.tree[0].ch
 /**
  * If the depth is not the one we are targeting then dive even more.
  * If yes, then we fetch the data from leafs and append them to the data var container.
- * @param gl
  * @param depth
  * @param currentNode
  */
-QuadTree.prototype.readLevel = function(gl, depth, currentNode) {
+QuadTree.prototype.readLevel = function(depth, currentNode) {
     if(depth === 0 || currentNode.children.length !== 4) {
         currentNode.vertices.forEach((val) => {
             this.data.push(val);
         });
     } else {
         for(let g = 0; g < 4; g++)
-            this.readLevel(gl, depth-1, currentNode.children[g]);
+            this.readLevel(depth-1, currentNode.children[g]);
+    }
+};
+
+/**
+ * Check if a given vector coord is given is within the X-axis [-1, 1],
+ * Y-axis [-1, 1], Z-axis (0, -1] range given that perspective matrix is
+ * used for coordinates projection.
+ * Fetch the minimal distance between the mesh and the camera position to
+ * compute it's complexity zone to be given to.
+ * @param vertices
+ * @param projection
+ * @returns {{withinFrustum: boolean, distanceRange: number}}
+ */
+QuadTree.prototype.checkFrustumBoundaries = function(vertices, projection, viewCamera) {
+    let distance = -5;
+    let withinFrustum = false;
+
+    for(let g = 0; g < vertices.length; g += 3) {
+
+        let viewVector = multiplyVector(viewCamera, [
+            vertices[g],
+            vertices[g+1],
+            vertices[g+2],
+            1.0
+            ]
+        );
+
+        let v = multiplyVector(projection, viewVector);
+
+        for(let h = 0; h < 3; h++)
+            v[h] /= v[3];
+
+        distance = Math.max(distance, distanceVecs([0, 0, -0.03], [viewVector[0], viewVector[1], viewVector[2]]));
+
+        if(v[0] >= -20.0 && v[0] <= 20.0 &&
+            v[1] >= -20.0 && v[1] <= 20.0 &&
+            v[2] >= -20.0 && v[2] <= 20.0)
+            withinFrustum = true;
+    }
+
+    return {
+        "withinFrustum" : withinFrustum,
+        "minZ" : Math.max(Math.abs(distance), 0.03)/5
+    };
+};
+
+QuadTree.prototype.readProjection = function(projection, viewCamera, currentNode = this.tree[0].children) {
+    this.data.length = 0;
+    for(let g = 0; g < 4; g++)
+        this.readComplexity(projection, viewCamera, currentNode[g]);
+
+    return this.data;
+};
+
+QuadTree.prototype.readComplexity = function(projection, viewCamera, currentNode, currentDepth = 1, clippedDepth = 1) {
+    let frustumBoundaries = this.checkFrustumBoundaries(currentNode.vertices, projection, viewCamera);
+    if(frustumBoundaries.withinFrustum) {
+        let depth = Math.max(this.depth-Math.ceil(frustumBoundaries.minZ/this.section), clippedDepth);
+
+        if(currentDepth === depth) {
+            currentNode.vertices.forEach((val) => {
+                this.data.push(val);
+            });
+        } else if(currentDepth < depth) {
+            currentNode.children.forEach((child) => {
+                this.readComplexity(projection, viewCamera, child, currentDepth+1, depth);
+            });
+        }
     }
 };
 
@@ -203,5 +260,7 @@ LOD.prototype.fetchData = function() {
     .then((mesh) => {
         this.tree = new QuadTree(mesh);
         this.render(this.gl);
+        console.log(this.tree.depth);
+        console.log(this.tree.tree);
     });
 };

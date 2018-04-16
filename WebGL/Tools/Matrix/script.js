@@ -213,6 +213,13 @@ function normalize(v) {
     else return [0, 0, 0];
 }
 
+function distanceVecs(a, b) {
+    let x = b[0] - a[0];
+    let y = b[1] - a[1];
+    let z = b[2] - a[2];
+    return Math.sqrt(x*x + y*y + z*z);
+}
+
 function transformQuat(out, a, q) {
     // benchmarks: http://jsperf.com/quaternion-transform-vec3-implementations
     let x = a[0], y = a[1], z = a[2];
@@ -230,14 +237,14 @@ function transformQuat(out, a, q) {
 }
 
 function multiplyVector(matrix, vector) {
-    let vectorProvisional = [0, 0, 0, 0];
+    let vec = [0, 0, 0, 0];
     for(let g = 0; g < 4; g++) {
         for(let h = 0; h < 4; h++) {
-            vectorProvisional[g] += matrix[g*4+h]*vector[h];
+            vec[g] += matrix[h*4+g]*vector[h];
         }
     }
-    // return vectorProvisional.slice(0, 3);
-    return vectorProvisional;
+
+    return vec;
 }
 
 function transposeMatrix(matrix) {

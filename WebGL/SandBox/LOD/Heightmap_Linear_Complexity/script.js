@@ -9,31 +9,31 @@ let sliders = [
         label : "Complexity Level",
         valueStart : 0,
         valueEnd : 12,
-        value : 9,
+        value : 7,
         measurement : "dg"
     }, {
         label : "cameraX",
-        valueStart : -1.5,
-        valueEnd : 1.5,
+        valueStart : -1,
+        valueEnd : 1,
         value : 0,
         measurement : "dp"
     }, {
         label : "cameraY",
-        valueStart : -3.5,
-        valueEnd : 3.5,
-        value : 1.0,
+        valueStart : -1,
+        valueEnd : 1,
+        value : 0,
         measurement : "dp"
     }, {
         label : "cameraZ",
-        valueStart : -8,
-        valueEnd :8,
-        value : 5,
+        valueStart : -5,
+        valueEnd : 5,
+        value : 4.4,
         measurement : "dp"
     }, {
         label : "cameraRotX",
         valueStart : 0,
         valueEnd : 2*Math.PI,
-        value : 0.6,
+        value : Math.PI/2,
         measurement : "°"
     }, {
         label : "cameraRotY",
@@ -50,7 +50,7 @@ let sliders = [
     }
 ];
 
-setSliders(sliders, drawScene, true, gl);
+setSliders(sliders, drawScene, false, gl);
 
 let vertexShaderSource = `
     attribute vec4 a_position;
@@ -102,12 +102,42 @@ function createProgram(gl, vertexShader, fragmentShader) {
     gl.deleteProgram(program);
 }
 
-function drawScene(gl) {
-    let depth = Math.floor(Number(sliders[0].value));
+function Animation(callback, from, to, by) {
+    this.callback = callback;
+    this.from = from;
+    this.to = to;
+    this.by = by;
+    this.value = this.from;
+    this.partition = (this.from-this.to)*this.by;
+    this.current = 0;
+    this.addEventListener();
+}
 
-    gl.vertexAttribPointer(attribPositionLoc, 3, gl.FLOAT, false, 0, 0);
+Animation.prototype.act = function(currentTime) {
+    let delTime = (currentTime/1000-this.current);
 
-    let cameraTranslation = matrices["translation"](sliders[1].value, sliders[2].value, sliders[3].value);
+    this.value -= delTime*this.partition;
+
+    this.current = currentTime/1000;
+    this.update();
+};
+
+Animation.prototype.update = function() {
+    sliders[3].value = this.value;
+};
+
+Animation.prototype.addEventListener = function() {
+    document.addEventListener("keydown", (e) => {
+        if(e.key === 's' || e.which === 83) {
+            requestAnimationFrame(this.callback);
+        }
+    });
+};
+
+function drawScene(time) {
+    animation.act(time);
+
+    let cameraTranslation = matrices["translation"](sliders[1].value, sliders[2].value, animation.value);
     let cameraRotX = matrices["rotationX"](sliders[4].value);
     let cameraRotY = matrices["rotationY"](sliders[5].value);
     let cameraRotZ = matrices["rotationZ"](sliders[6].value);
@@ -115,11 +145,18 @@ function drawScene(gl) {
     let viewMatrix = multiplyMatrices(cameraTranslation, cameraRotX, cameraRotY, cameraRotZ);
     let cameraMatrix = inverseMatrix(viewMatrix);
 
-    let perspective = matrices["perspective"](1.047, gl.canvas.width/gl.canvas.height, 0.001, 200);
+    let perspective = matrices["perspective"](1.047, gl.canvas.width/gl.canvas.height, 0.01, 5);
+
+    let data = lod.tree.readProjection(perspective, cameraMatrix);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.DYNAMIC_DRAW);
+    gl.vertexAttribPointer(attribPositionLoc, 3, gl.FLOAT, false, 0, 0);
+
     gl.uniformMatrix4fv(uniformProjectionLocation, false, perspective);
     gl.uniformMatrix4fv(uniformCameraLocation, false, cameraMatrix);
 
-    gl.drawArrays(gl.TRIANGLES, 0, Math.pow(2, 2*depth)*6);
+    gl.drawArrays(gl.TRIANGLES, 0, data.length/3);
+
+    requestAnimationFrame(drawScene);
 }
 
 let uniformProjectionLocation, uniformCameraLocation;
@@ -140,6 +177,7 @@ function resize(gl) {
 }
 
 let lod = new LOD(startWebGL, gl);
+let animation = new Animation(drawScene, sliders[3].valueEnd, sliders[3].valueStart, 1/65);
 
 function startWebGL(gl) {
     resize(gl);
@@ -162,10 +200,4 @@ function startWebGL(gl) {
     let positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.enableVertexAttribArray(attribPositionLoc);
-
-    let depth = Math.floor(Number(sliders[0].value));
-    let data = lod.tree.readDepth(gl, depth);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.DYNAMIC_DRAW);
-
-    drawScene(gl);
 }

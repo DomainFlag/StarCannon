@@ -19,9 +19,9 @@ let sliders = [
         measurement : "px"
     }, {
         label : "translationZ",
-        valueStart : -30,
-        valueEnd : 30,
-        value : -30,
+        valueStart : -50,
+        valueEnd : 50,
+        value : -50,
         measurement : "px"
     }, {
         label : "rotationX",
