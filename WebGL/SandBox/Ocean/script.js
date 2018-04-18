@@ -9,43 +9,43 @@ let sliders = [
         label : "speedX",
         valueStart : -2,
         valueEnd : 2,
-        valueCurrent : 0,
+        value : 0,
         measurement : "ms"
     }, {
         label : "speedY",
         valueStart : -10,
         valueEnd : 10,
-        valueCurrent : 0,
+        value : 0,
         measurement : "ms"
     }, {
         label: "speedZ",
         valueStart: 0,
         valueEnd: 400,
-        valueCurrent: 0,
+        value: 0,
         measurement: "ms"
     }, {
         label: "fieldOfView",
         valueStart: 1,
         valueEnd: Math.PI,
-        valueCurrent: Math.PI/3*2,
+        value: Math.PI/3*2,
         measurement: "f"
     }, {
         label : "rotationX",
         valueStart : 0,
         valueEnd : 360,
-        valueCurrent : 0,
+        value : 0,
         measurement : "°"
     }, {
         label : "rotationY",
         valueStart : 0,
         valueEnd : 360,
-        valueCurrent : 0,
+        value : 0,
         measurement : "°"
     }, {
         label : "rotationZ",
         valueStart : 0,
         valueEnd : 360,
-        valueCurrent : 0,
+        value : 0,
         measurement : "°"
     }
 ];
@@ -421,10 +421,10 @@ let noise = new Noise();
 function drawScene(gl) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    let perspective = matrices["perspective"](sliders[3].valueCurrent, gl.canvas.width/gl.canvas.height, 1, 2000);
+    let perspective = matrices["perspective"](sliders[3].value, gl.canvas.width/gl.canvas.height, 1, 2000);
     let projection = matrices["projection"](gl.canvas.width, gl.canvas.height, 2000);
 
-    ocean.speed = sliders[1].valueCurrent;
+    ocean.speed = sliders[1].value;
     if(ocean.translation[13]-ocean.speed > gl.canvas.height/2)
         ocean.translation = matrices["translation"](0, 0, 0);
     else

@@ -6,24 +6,6 @@ gl.canvas.height = canvas.getBoundingClientRect().height;
 
 let sliders = [
     {
-        label : "cameraX",
-        valueStart : -1.5,
-        valueEnd : 1.5,
-        value : 0,
-        measurement : "dp"
-    }, {
-        label : "cameraY",
-        valueStart : -3.5,
-        valueEnd : 3.5,
-        value : 0.0,
-        measurement : "dp"
-    }, {
-        label : "cameraZ",
-        valueStart : -8,
-        valueEnd :8,
-        value : 0.5,
-        measurement : "dp"
-    }, {
         label : "cameraRotX",
         valueStart : 0,
         valueEnd : 360,
@@ -41,48 +23,22 @@ let sliders = [
         valueEnd : 360,
         value : 0,
         measurement : "°"
-    },{
-        label : "objectRotX",
-        valueStart : 0,
-        valueEnd : 2*Math.PI,
-        value : 0,
-        measurement : "°"
-    }, {
-        label : "objectRotY",
-        valueStart : 0,
-        valueEnd : 2*Math.PI,
-        value : 0,
-        measurement : "°"
-    }, {
-        label : "objectRotZ",
-        valueStart : 0,
-        valueEnd : 2*Math.PI,
-        value : 0,
-        measurement : "°"
-    }, {
-        label: "fieldOfView",
-        valueStart : 0,
-        valueEnd : Math.PI,
-        value : 1,
-        measurement: "°"
     }
 ];
 
-setSliders(sliders, drawScene, false, gl);
+setSliders(sliders, drawScene, true, gl);
 
 let vertexShaderSunSource = `
     attribute vec4 a_sunPos;
     
-    uniform mat4 u_model;
     uniform mat4 u_camera;
     uniform mat4 u_projection;
     
     varying vec3 v_sunPos;
     
     void main() {
-        vec4 camera = u_camera*u_model*a_sunPos;
-        vec4 result = u_projection*camera;
-        gl_Position = result;
+        vec4 pos = u_projection*u_camera*a_sunPos;
+        gl_Position = pos;
         
         v_sunPos = a_sunPos.xyz;
     }
@@ -145,14 +101,21 @@ let fragmentShaderSkySource = `
     }
     
     void main() {
-        float dist = 1.0-distance(v_skyLoc, u_sunPos)/2.0*sqrt(2.0);
+        //Workaround for simple radial effect that projects to the cube box
+        float dist = (1.0-distance(vec3(v_skyLoc.x, v_skyLoc.y+u_sunPos.y, v_skyLoc.z), u_sunPos)/(2.0*sqrt(2.0)));
         
         vec3 hsv = rgb2hsv(u_color.rgb);
+        
         hsv.rb *= u_pitch;
         
-        hsv.r -= pow(log((u_pitch)/2.0+1.0), 1.0/4.0);
-        hsv.b -= (1.0-u_pitch)/3.0;
-        hsv.b += dist/1.5;
+        //Gamma cycle correction
+        hsv.r -= pow(log((u_pitch)/2.0+1.0), 1.0/2.0);
+        
+        //Luminosity cycle
+        // hsv.b -= (1.0-u_pitch)/3.0;
+        
+        //Radial gradient
+        hsv.b += dist;
         
         vec3 color = hsv2rgb(hsv);
         
@@ -213,7 +176,7 @@ Sky.prototype.parseColor = function() {
 Sky.prototype.act = function(now) {
     now *= 0.001;
 
-    let deltaTime = (now-this.past)/30.0;
+    let deltaTime = (now-this.past)/5.0;
     this.rotationX = (this.rotationX-deltaTime)%(-2*Math.PI);
 
     this.past = now;
@@ -223,8 +186,48 @@ Sky.prototype.getNbTriangles = function() {
     return this.mesh.length/3;
 };
 
+Sky.prototype.init = function() {
+    let vertexSkyShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSkySource);
+    let fragmentSkyShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSkySource);
+    this.skyProgram = createProgram(gl, vertexSkyShader, fragmentSkyShader);
+
+    gl.useProgram(this.skyProgram);
+    this.attribPosSkyLoc = gl.getAttribLocation(this.skyProgram, "a_skyPos");
+    this.unifPitchLoc = gl.getUniformLocation(this.skyProgram, "u_pitch");
+    this.unifYawLoc = gl.getUniformLocation(this.skyProgram, "u_yaw");
+    this.unifColorSkyLoc = gl.getUniformLocation(this.skyProgram, "u_color");
+    this.unifSunSkyLoc = gl.getUniformLocation(this.skyProgram, "u_sunPos");
+
+    this.positionSkyBuffer = gl.createBuffer();
+
+    this.sun.init();
+};
+
+Sky.prototype.render = function(viewMatrix, projection) {
+    gl.useProgram(this.skyProgram);
+
+    gl.enableVertexAttribArray(this.attribPosSkyLoc);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionSkyBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.mesh), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(this.attribPosSkyLoc, 3, gl.FLOAT, false, 0, 0);
+
+    let vector = multiplyVector(viewMatrix, this.sun.position);
+
+    let pitch = Math.sin(-sliders[0].value/360*2*Math.PI)+0.3;
+    let yaw = Math.cos(sliders[1].value/360*2*Math.PI);
+
+    gl.uniform1f(this.unifPitchLoc, pitch);
+    gl.uniform1f(this.unifYawLoc, yaw);
+    gl.uniform3fv(this.unifColorSkyLoc, this.color);
+    gl.uniform3fv(this.unifSunSkyLoc, vector);
+
+    gl.drawArrays(gl.TRIANGLES, 0, this.getNbTriangles());
+
+    sky.sun.render(viewMatrix, projection);
+};
+
 function Sun() {
-    // this.ratio = gl.canvas.width/gl.canvas.height;
     this.ratio = 1.0;
     this.mesh = [];
     this.clarity = 64;
@@ -234,6 +237,7 @@ function Sun() {
     this.radiusY = this.radiusX*this.ratio;
     this.color = [254, 255, 255];
 
+    this.init();
     this.parseColor();
     this.createMesh();
 }
@@ -255,9 +259,9 @@ Sun.prototype.createMesh = function() {
         c2 = Math.cos(rotation)*this.radiusX;
         s2 = Math.sin(rotation)*this.radiusY;
 
-        this.mesh.push(c1, s1, -0.95);
-        this.mesh.push(c2, s2, -0.95);
-        this.mesh.push(0, 0, -0.95);
+        this.mesh.push(c1, s1, -1);
+        this.mesh.push(c2, s2, -1);
+        this.mesh.push(0, 0, -1);
 
         c1 = c2;
         s1 = s2;
@@ -268,69 +272,58 @@ Sun.prototype.getNbTriangles = function() {
     return this.mesh.length/3;
 };
 
+Sun.prototype.init = function() {
+    let vertexSunShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSunSource);
+    let fragmentSunShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSunSource);
+    this.sunProgram = createProgram(gl, vertexSunShader, fragmentSunShader);
+
+    gl.useProgram(this.sunProgram);
+
+    this.attribPosSunLoc = gl.getAttribLocation(this.sunProgram, "a_sunPos");
+    this.unifColorLoc = gl.getUniformLocation(this.sunProgram, "u_color");
+    this.unifCameraLoc = gl.getUniformLocation(this.sunProgram, "u_camera");
+    this.unifProjectionLoc = gl.getUniformLocation(this.sunProgram, "u_projection");
+
+    this.unifSunOriginLoc = gl.getUniformLocation(this.sunProgram, "u_sunOrigin");
+    this.unifRadiusLoc = gl.getUniformLocation(this.sunProgram, "u_radius");
+
+    this.positionSunBuffer = gl.createBuffer();
+};
+
+Sun.prototype.render = function(viewMatrix, projection) {
+    gl.useProgram(this.sunProgram);
+
+    gl.enableVertexAttribArray(this.attribPosSunLoc);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionSunBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.mesh), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(this.attribPosSunLoc, 3, gl.FLOAT, false, 0, 0);
+
+    gl.uniformMatrix4fv(this.unifCameraLoc, false, viewMatrix);
+    gl.uniformMatrix4fv(this.unifProjectionLoc, false, projection);
+
+    gl.uniform3fv(this.unifColorLoc, this.color);
+    gl.uniform3fv(this.unifSunOriginLoc, this.position.slice(0, 3));
+    gl.uniform1f(this.unifRadiusLoc, this.radiusX);
+
+    gl.drawArrays(gl.TRIANGLES, 0, this.getNbTriangles());
+};
+
 function drawScene(time) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    sky.act(time);
+    // sky.act(time);
 
-    let quaternion = matrices["quarternion"]();
-    let quaternionRot = matrices["fromEuler"](quaternion, sky.rotationX/Math.PI*360, sliders[4].value, sliders[5].value);
-    let quaternionMatrix = matrices["fromQuat"](matrices["idMatrix"](), quaternionRot);
+    let objectRotX = matrices["rotationX"](sliders[0].value/360*2*Math.PI);
+    let objectRotY = matrices["rotationY"](sliders[1].value/360*2*Math.PI);
+    let objectRotZ = matrices["rotationZ"](sliders[2].value/360*2*Math.PI);
+    let perspective = matrices["perspective"](Math.PI/3.0, gl.canvas.width/gl.canvas.height, 0.01, 10);
 
-    let cameraTranslation = matrices["translation"](sliders[0].value, sliders[1].value, sliders[2].value);
-    let objectRotX = matrices["rotationX"](sliders[6].value);
-    let objectRotY = matrices["rotationY"](sliders[7].value);
-    let objectRotZ = matrices["rotationZ"](sliders[8].value);
-    let perspective = matrices["perspective"](sliders[9].value, gl.canvas.width/gl.canvas.height, 1, 200);
+    let viewMatrix = multiplyMatrices(objectRotX, objectRotY, objectRotZ);
 
-    let modelMatrix = multiplyMatrices(objectRotX, objectRotY, objectRotZ);
+    sky.render(viewMatrix, perspective);
 
-    let quaternionCamera = inverseMatrix(multiplyMatrices(quaternionMatrix, cameraTranslation));
-
-    //Sky Program
-    gl.useProgram(skyProgram);
-
-    let vector = multiplyVector(quaternionCamera, sky.sun.position);
-    let sunCenterDistance = normalize(vector);
-
-    let sunCenterDistanceX = cross(sunCenterDistance, [-1, 0, 0]);
-    let pitch = dot(sunCenterDistanceX, [0, 0.5, -1]);
-
-    let sunCenterDistanceY = cross(sunCenterDistance, [0, -1, 0]);
-    let yaw = dot(sunCenterDistanceY, [0, 0, -1]);
-
-    gl.uniform1f(unifPitchLoc, pitch);
-    gl.uniform1f(unifYawLoc, yaw);
-    gl.uniform3fv(unifColorSkyLoc, sky.color);
-    vector[1] *= (-1);
-    gl.uniform3fv(unifSunSkyLoc, vector);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionSkyBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sky.mesh), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(attribPosSkyLoc, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(attribPosSkyLoc);
-
-    gl.drawArrays(gl.TRIANGLES, 0, sky.getNbTriangles());
-
-    //Sun Program
-    gl.useProgram(sunProgram);
-
-    gl.uniformMatrix4fv(unifViewLoc, false, modelMatrix);
-    gl.uniformMatrix4fv(unifCameraLoc, false, quaternionCamera);
-    gl.uniformMatrix4fv(unifProjectionLoc, false, perspective);
-
-    gl.uniform3fv(unifColorLoc, sky.sun.color);
-    gl.uniform3fv(unifSunOriginLoc, sky.sun.position.slice(0, 3));
-    gl.uniform1f(unifRadiusLoc, sky.sun.radiusX);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionSunBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sky.sun.mesh), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(attribPosSunLoc, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(attribPosSunLoc);
-
-    gl.drawArrays(gl.TRIANGLES, 0, sky.sun.getNbTriangles());
-
-    requestAnimationFrame(drawScene);
+    // requestAnimationFrame(drawScene);
 }
 
 function resize(gl) {
@@ -347,57 +340,17 @@ function resize(gl) {
     }
 }
 
-let unifCameraLoc, unifViewLoc, unifProjectionLoc;
-let sunProgram, skyProgram;
-let attribPosSunLoc, attribPosSkyLoc;
-let unifColorLoc, unifSunSkyLoc;
-let unifSunOriginLoc, unifRadiusLoc;
-
-let unifPitchLoc, unifYawLoc, unifColorSkyLoc;
-
-let positionSkyBuffer, positionSunBuffer;
-
 let sky = new Sky();
 startWebGL(gl);
 
 function startWebGL(gl) {
     resize(gl);
-    let vertexSunShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSunSource);
-    let fragmentSunShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSunSource);
 
-    sunProgram = createProgram(gl, vertexSunShader, fragmentSunShader);
-
-    let vertexSkyShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSkySource);
-    let fragmentSkyShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSkySource);
-
-    skyProgram = createProgram(gl, vertexSkyShader, fragmentSkyShader);
-
-    gl.useProgram(sunProgram);
+    sky.init();
 
     gl.clearColor(0, 0, 0, 0);
     gl.enable(gl.BLEND);
-    // gl.enable(gl.DEPTH_TEST);
-    // gl.depthFunc(gl.LESS);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-    attribPosSunLoc = gl.getAttribLocation(sunProgram, "a_sunPos");
-    unifColorLoc = gl.getUniformLocation(sunProgram, "u_color");
-    unifViewLoc = gl.getUniformLocation(sunProgram, "u_model");
-    unifCameraLoc = gl.getUniformLocation(sunProgram, "u_camera");
-    unifProjectionLoc = gl.getUniformLocation(sunProgram, "u_projection");
-    
-    unifSunOriginLoc = gl.getUniformLocation(sunProgram, "u_sunOrigin");
-    unifRadiusLoc = gl.getUniformLocation(sunProgram, "u_radius");
-
-    gl.useProgram(skyProgram);
-    attribPosSkyLoc = gl.getAttribLocation(skyProgram, "a_skyPos");
-    unifPitchLoc = gl.getUniformLocation(skyProgram, "u_pitch");
-    unifYawLoc = gl.getUniformLocation(skyProgram, "u_yaw");
-    unifColorSkyLoc = gl.getUniformLocation(skyProgram, "u_color");
-    unifSunSkyLoc = gl.getUniformLocation(skyProgram, "u_sunPos");
-
-    positionSunBuffer = gl.createBuffer();
-    positionSkyBuffer = gl.createBuffer();
 
     requestAnimationFrame(drawScene);
 }

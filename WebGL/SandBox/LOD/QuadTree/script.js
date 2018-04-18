@@ -8,13 +8,6 @@
  * terrain within the the visible area not clipped by the frustum.
  */
 
-const orientation = {
-    0 : "top_left",
-    1 : "top_right",
-    2 : "bottom_left",
-    3 : "bottom_right"
-};
-
 /**
  * Containing terrain 2D Box that spans from [x0, x1] to [y0, y1], inclusive
  * where x and y corresponds to cols and rows respectively.
@@ -22,11 +15,9 @@ const orientation = {
  * @param y0 Minimal dim value on Y-axis
  * @param x1 Maximum dim value on X-axis
  * @param y1 Maximum dim value on Y-axis
- * @param direction ...
  * @constructor
  */
-function Box(x0, y0, x1, y1, direction) {
-    this.direction = orientation[direction];
+function Box(x0, y0, x1, y1) {
     this.x0 = x0;
     this.y0 = y0;
     this.x1 = x1;
@@ -81,6 +72,34 @@ Box.prototype.getVerticesCoord = function(tCols) {
     ];
 };
 
+QuadTree.prototype.getPlaneVertices = function(node, coord) {
+    node["vertices"].push(this.mesh[coord][0]);
+    node["vertices"].push(this.mesh[coord][1]);
+    node["vertices"].push(this.mesh[coord][2]);
+};
+
+QuadTree.prototype.getSphereVertices = function(node, coord) {
+    let x = this.mesh[coord][0];
+    let y = this.mesh[coord][1];
+    let z = this.mesh[coord][2];
+
+    let r = Math.abs(y+0.5)/2.0+1.0;
+
+    let sinTheta = Math.sin((x+1.0)/2.0*2*Math.PI);
+    let cosTheta = Math.cos((x+1.0)/2.0*2*Math.PI);
+
+
+    let sinPhi = Math.sin((z+1.0)/2.0*2*Math.PI);
+    let cosPhi = Math.cos((z+1.0)/2.0*2*Math.PI);
+
+    node["vertices"].push(
+        cosPhi * sinTheta * r,
+        cosTheta * r,
+        sinPhi * sinTheta * r
+    );
+};
+
+
 /**
  * QuadTree constructor, each leaf has higher level complexity up to 4x times.
  * Depth is the max depth where box's checkPartition is true for deepest Breadth-first search for all leafs.
@@ -123,8 +142,7 @@ QuadTree.prototype.fillTree = function(currentNode, depth, currentBox) {
     currentNode.push(node);
 
     currentBox.getVerticesCoord(this.cols).forEach((coord) => {
-        for(let i = 0; i < 3; i++)
-            node["vertices"].push(this.mesh[coord][i]);
+        this.getPlaneVertices(node, coord);
     });
 
     currentBox.getPartitions().forEach((box) => {
@@ -173,19 +191,20 @@ QuadTree.prototype.readLevel = function(depth, currentNode) {
  * compute it's complexity zone to be given to.
  * @param vertices
  * @param projection
+ * @param viewCamera
  * @returns {{withinFrustum: boolean, distanceRange: number}}
  */
 QuadTree.prototype.checkFrustumBoundaries = function(vertices, projection, viewCamera) {
-    let distance = -5;
+    let distance = -1;
     let withinFrustum = false;
 
     for(let g = 0; g < vertices.length; g += 3) {
 
         let viewVector = multiplyVector(viewCamera, [
-            vertices[g],
-            vertices[g+1],
-            vertices[g+2],
-            1.0
+                vertices[g],
+                vertices[g+1],
+                vertices[g+2],
+                1.0
             ]
         );
 
@@ -196,9 +215,9 @@ QuadTree.prototype.checkFrustumBoundaries = function(vertices, projection, viewC
 
         distance = Math.max(distance, distanceVecs([0, 0, -0.03], [viewVector[0], viewVector[1], viewVector[2]]));
 
-        if(v[0] >= -20.0 && v[0] <= 20.0 &&
-            v[1] >= -20.0 && v[1] <= 20.0 &&
-            v[2] >= -20.0 && v[2] <= 20.0)
+        if(v[0] >= -1.0 && v[0] <= 1.0 &&
+            v[1] >= -1.0 && v[1] <= 1.0 &&
+            v[2] >= -1.0 && v[2] <= 1.0)
             withinFrustum = true;
     }
 
@@ -216,18 +235,18 @@ QuadTree.prototype.readProjection = function(projection, viewCamera, currentNode
     return this.data;
 };
 
-QuadTree.prototype.readComplexity = function(projection, viewCamera, currentNode, currentDepth = 1, clippedDepth = 1) {
+QuadTree.prototype.readComplexity = function(projection, viewCamera, currentNode, currentDepth = 1) {
     let frustumBoundaries = this.checkFrustumBoundaries(currentNode.vertices, projection, viewCamera);
     if(frustumBoundaries.withinFrustum) {
-        let depth = Math.max(this.depth-Math.ceil(frustumBoundaries.minZ/this.section), clippedDepth);
+        let depth = this.depth-Math.ceil(frustumBoundaries.minZ/this.section);
 
-        if(currentDepth === depth) {
+        if(currentDepth >= depth) {
             currentNode.vertices.forEach((val) => {
                 this.data.push(val);
             });
         } else if(currentDepth < depth) {
             currentNode.children.forEach((child) => {
-                this.readComplexity(projection, viewCamera, child, currentDepth+1, depth);
+                this.readComplexity(projection, viewCamera, child, currentDepth+1);
             });
         }
     }
@@ -257,10 +276,8 @@ function LOD(render, gl) {
  */
 LOD.prototype.fetchData = function() {
     fetch("./../QuadTree/pixels.json").then((data) => data.json())
-    .then((mesh) => {
-        this.tree = new QuadTree(mesh);
-        this.render(this.gl);
-        console.log(this.tree.depth);
-        console.log(this.tree.tree);
-    });
+        .then((mesh) => {
+            this.tree = new QuadTree(mesh);
+            this.render(this.gl);
+        });
 };

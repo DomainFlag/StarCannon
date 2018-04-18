@@ -180,6 +180,14 @@ function cross(a, b) {
     ];
 }
 
+function addValues(a, b) {
+    return [
+        a[0]+b[0],
+        a[1]+b[1],
+        a[2]+b[2]
+    ];
+}
+
 function substractValues(a, b) {
     return [
         a[0]-b[0],
@@ -244,7 +252,8 @@ function multiplyVector(matrix, vector) {
         }
     }
 
-    return vec;
+    return vec.slice(0, 3);
+    // return vec;
 }
 
 function transposeMatrix(matrix) {

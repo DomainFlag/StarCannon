@@ -15,19 +15,19 @@ let sliders = [
         label : "cameraX",
         valueStart : -1,
         valueEnd : 1,
-        value : 0,
+        value : -0.15,
         measurement : "dp"
     }, {
         label : "cameraY",
         valueStart : -1,
         valueEnd : 1,
-        value : 0,
+        value : 0.15,
         measurement : "dp"
     }, {
         label : "cameraZ",
         valueStart : -5,
         valueEnd : 5,
-        value : 4.4,
+        value : 2.7,
         measurement : "dp"
     }, {
         label : "cameraRotX",
@@ -50,7 +50,7 @@ let sliders = [
     }
 ];
 
-setSliders(sliders, drawScene, false, gl);
+setSliders(sliders, drawScene, true, gl);
 
 let vertexShaderSource = `
     attribute vec4 a_position;
@@ -59,23 +59,34 @@ let vertexShaderSource = `
     uniform mat4 u_camera;
     
     varying float v_depth;
+    varying vec2 v_tex;
+    varying float v_far;
+    
     void main() {
         vec4 projectionView = u_projection*u_camera*a_position;
         gl_Position = projectionView;
         
         v_depth = a_position.y+0.5;
+        v_tex = vec2(((a_position.x+a_position.z)/4.0+0.5)*5.0, 1.0-v_depth);
+        v_far = 1.0-log(distance(gl_Position.xyz, vec3(0, 0, 1.0)));
     }
 `;
 
 let fragmentShaderSource = `
     precision mediump float;
     
+    uniform sampler2D u_texture;
+    
+    varying vec2 v_tex;
     varying float v_depth;
+    varying float v_far;
     
     void main() {
-        gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
+        gl_FragColor = texture2D(u_texture, v_tex);
         
         gl_FragColor.rgb *= v_depth;
+
+        gl_FragColor.w = v_far;
     }
 `;
 
@@ -134,10 +145,10 @@ Animation.prototype.addEventListener = function() {
     });
 };
 
-function drawScene(time) {
-    animation.act(time);
+function drawScene(currentTime) {
+    // animation.act(currentTime);
 
-    let cameraTranslation = matrices["translation"](sliders[1].value, sliders[2].value, animation.value);
+    let cameraTranslation = matrices["translation"](sliders[1].value, sliders[2].value, sliders[3].value);
     let cameraRotX = matrices["rotationX"](sliders[4].value);
     let cameraRotY = matrices["rotationY"](sliders[5].value);
     let cameraRotZ = matrices["rotationZ"](sliders[6].value);
@@ -155,8 +166,6 @@ function drawScene(time) {
     gl.uniformMatrix4fv(uniformCameraLocation, false, cameraMatrix);
 
     gl.drawArrays(gl.TRIANGLES, 0, data.length/3);
-
-    requestAnimationFrame(drawScene);
 }
 
 let uniformProjectionLocation, uniformCameraLocation;
@@ -176,8 +185,17 @@ function resize(gl) {
     }
 }
 
-let lod = new LOD(startWebGL, gl);
-let animation = new Animation(drawScene, sliders[3].valueEnd, sliders[3].valueStart, 1/65);
+let lod;
+let animation;
+
+let img = document.createElement("img");
+img.crossOrigin = "null";
+img.src = "http://localhost:8000/texture?filename=terrain_gradient.png";
+img.addEventListener("load", () => {
+    lod = new LOD(startWebGL, gl);
+    // animation = new Animation(drawScene, sliders[3].valueEnd, sliders[3].valueStart, 1/65);
+});
+
 
 function startWebGL(gl) {
     resize(gl);
@@ -192,6 +210,14 @@ function startWebGL(gl) {
     attribPositionLoc = gl.getAttribLocation(program, "a_position");
     uniformCameraLocation = gl.getUniformLocation(program, "u_camera");
 
+    let texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
     gl.clearColor(0, 0, 0, 0);
@@ -200,4 +226,6 @@ function startWebGL(gl) {
     let positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.enableVertexAttribArray(attribPositionLoc);
+
+    drawScene();
 }
