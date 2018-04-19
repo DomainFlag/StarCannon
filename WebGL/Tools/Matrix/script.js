@@ -252,8 +252,8 @@ function multiplyVector(matrix, vector) {
         }
     }
 
-    return vec.slice(0, 3);
-    // return vec;
+    // return vec.slice(0, 3);
+    return vec;
 }
 
 function transposeMatrix(matrix) {
