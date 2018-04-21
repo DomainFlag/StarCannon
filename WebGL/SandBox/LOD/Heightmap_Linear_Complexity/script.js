@@ -13,21 +13,21 @@ let sliders = [
         measurement : "dg"
     }, {
         label : "cameraX",
-        valueStart : -1,
-        valueEnd : 1,
+        valueStart : -10,
+        valueEnd : 10,
         value : -0.15,
         measurement : "dp"
     }, {
         label : "cameraY",
-        valueStart : -1,
-        valueEnd : 1,
+        valueStart : -10,
+        valueEnd : 10,
         value : 0.15,
         measurement : "dp"
     }, {
         label : "cameraZ",
-        valueStart : -5,
-        valueEnd : 5,
-        value : 2.7,
+        valueStart : -10,
+        valueEnd : 10,
+        value : 6.0,
         measurement : "dp"
     }, {
         label : "cameraRotX",
@@ -64,11 +64,12 @@ let vertexShaderSource = `
     
     void main() {
         vec4 projectionView = u_projection*u_camera*a_position;
+        
         gl_Position = projectionView;
         
         v_depth = a_position.y+0.5;
         v_tex = vec2(((a_position.x+a_position.z)/4.0+0.5)*5.0, 1.0-v_depth);
-        v_far = 1.0-log(distance(gl_Position.xyz, vec3(0, 0, 1.0)));
+        v_far = 10.0-log(distance(gl_Position.xyz, vec3(0, 0, 1.0)));
     }
 `;
 
@@ -82,11 +83,17 @@ let fragmentShaderSource = `
     varying float v_far;
     
     void main() {
-        gl_FragColor = texture2D(u_texture, v_tex);
-        
-        gl_FragColor.rgb *= v_depth;
-
-        gl_FragColor.w = v_far;
+        gl_FragColor = vec4(1.0, 0, 0, 1.0);
+        // if(v_depth >= 0.05) {
+        //     gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
+        //     gl_FragColor = texture2D(u_texture, v_tex);
+        //
+        //     gl_FragColor.rgb *= v_depth;
+        //
+        //     gl_FragColor.w = v_far;
+        // } else {
+        //     gl_FragColor = vec4(0.147, 0.572, 0.792, 1.0);
+        // }
     }
 `;
 
@@ -156,7 +163,7 @@ function drawScene(currentTime) {
     let viewMatrix = multiplyMatrices(cameraTranslation, cameraRotX, cameraRotY, cameraRotZ);
     let cameraMatrix = inverseMatrix(viewMatrix);
 
-    let perspective = matrices["perspective"](1.047, gl.canvas.width/gl.canvas.height, 0.01, 5);
+    let perspective = matrices["perspective"](2.047, gl.canvas.width/gl.canvas.height, 0.01, 30);
 
     let data = lod.tree.readProjection(perspective, cameraMatrix);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.DYNAMIC_DRAW);
@@ -165,7 +172,9 @@ function drawScene(currentTime) {
     gl.uniformMatrix4fv(uniformProjectionLocation, false, perspective);
     gl.uniformMatrix4fv(uniformCameraLocation, false, cameraMatrix);
 
-    gl.drawArrays(gl.TRIANGLES, 0, data.length/3);
+    gl.drawArrays(gl.LINES, 0, data.length/3);
+
+    // requestAnimationFrame(drawScene);
 }
 
 let uniformProjectionLocation, uniformCameraLocation;
@@ -193,7 +202,7 @@ img.crossOrigin = "null";
 img.src = "http://localhost:8000/texture?filename=terrain_gradient.png";
 img.addEventListener("load", () => {
     lod = new LOD(startWebGL, gl);
-    // animation = new Animation(drawScene, sliders[3].valueEnd, sliders[3].valueStart, 1/65);
+    animation = new Animation(drawScene, sliders[3].valueEnd, sliders[3].valueStart, 1/65);
 });
 
 
@@ -228,4 +237,5 @@ function startWebGL(gl) {
     gl.enableVertexAttribArray(attribPositionLoc);
 
     drawScene();
+    // requestAnimationFrame(drawScene);
 }
