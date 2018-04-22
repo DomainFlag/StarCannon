@@ -1,7 +1,7 @@
 SYSCONF_LINK = g++
 CPPFLAGS     = -std=c++11
 LDFLAGS      =
-LIBS         = -lm -lSOIL -lGL -lGLEW -lglfw
+LIBS         = -lGL -lGLEW -lglfw
 
 DESTDIR = ./
 TARGET  = Sky

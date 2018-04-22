@@ -1,5 +1,3 @@
-#include "Terrain.h"
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -10,6 +8,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <SOIL/SOIL.h>
+#include "Terrain.h"
+
 #include "./../Shader/Shader.h"
 // #include "./../Shader/Shader.cpp"
 #include "./../Tools/Matrix/Matrix.h"

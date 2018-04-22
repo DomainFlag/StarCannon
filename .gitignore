@@ -1,4 +1,4 @@
-Audio/src/*
-Audio/other/*
-Audio/lib/*
-.idea/*
+OpenGL/Audio/lib
+OpenGL/Audio/media
+OpenGL/Audio/other
+OpenGL/Audio/src

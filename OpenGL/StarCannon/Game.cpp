@@ -4,10 +4,10 @@
 #include <vector>
 #include <map>
 #include <cmath>
-#include "./../../Audio/Audio.h"
+#include "./../Audio/Audio.h"
 #include "./../Tools/Matrix/Matrix.h"
 #include "./../Terrain/Terrain.h"
-#include "./../Sky/Sky.h"
+#include "./../SkyBox/Sky.h"
 #include "./../Spacecraft/Spacecraft.h"
 #include "./../Thruster/Thruster.h"
 using namespace std;
@@ -15,17 +15,21 @@ using namespace std;
 const GLFWvidmode * mode;
 
 Audio * audioP;
-
 SkyLayer * skyP;
 Thruster * thrusterP;
 Spacecraft * spacecraftP;
 TerrainLayer * terrainP;
 
 void input(GLFWwindow * window, int key, int action, int u, int i) {
-	terrainP->keyboardListener(window, key, action, u, i);
-	skyP->keyboardListener(window, key, action, u, i);
+	// terrainP->keyboardListener(window, key, action, u, i);
+	// skyP->keyboardListener(window, key, action, u, i);
 
-	audioP->keyboardListener(window, key, action, u, i);
+	switch(key) {
+		case GLFW_KEY_ESCAPE : {
+			glfwSetWindowShouldClose(window, true);
+			break;
+		};
+	};
 };
 
 void cursor(GLFWwindow * window, double x, double y) {
@@ -33,7 +37,14 @@ void cursor(GLFWwindow * window, double x, double y) {
 	skyP->cursorListener(window, x, y);
 };
 
-int main(int argc, char ** argv) {
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+	string command = "start_sound_0";
+    if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        audioP->changeAudio(command);
+    }
+}
+
+int main() {
 	GLFWwindow * window;
 
 	if(!glfwInit())
@@ -58,6 +69,11 @@ int main(int argc, char ** argv) {
 	Audio audio;
 	audioP = &audio;
 
+	string command = "start_sound_3";
+	audioP->changeAudio(command);
+	command = "start_sound_2";
+	audioP->changeAudio(command);
+
 	// TerrainLayer terrain(mode);
 	SkyLayer sky(mode);
 	Thruster thruster(mode);
@@ -77,6 +93,7 @@ int main(int argc, char ** argv) {
 
 	glfwSetKeyCallback(window, input);
 	glfwSetCursorPosCallback(window, cursor);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 	while(!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -99,6 +116,9 @@ int main(int argc, char ** argv) {
 
 	terrain.freeProgram();
 	sky.freeProgram();
+	terrain.freeProgram();
+	thruster.freeProgram();
+	audio.freeAudio();
 
 	glfwTerminate();
 	return 0;

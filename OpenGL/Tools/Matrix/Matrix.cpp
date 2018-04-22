@@ -84,6 +84,30 @@ void Matrix::perspective(float fieldOfView, float aspect, float near, float far)
 	this->matrix[14] = near*far*rangeInv*2;
 }
 
+Matrix Matrix::lookAt(vector<float> cameraPosition, vector<float> target, vector<float> up) {
+	Matrix result;
+
+    vector<float> zAxis = normalize(substractValues(cameraPosition, target));
+    vector<float> xAxis = cross(up, zAxis);
+    vector<float> yAxis = cross(zAxis, xAxis);
+
+    result.matrix[0] = xAxis[0];
+    result.matrix[1] = xAxis[1];
+    result.matrix[2] = xAxis[2];
+    result.matrix[4] = yAxis[0];
+    result.matrix[5] = yAxis[1];
+    result.matrix[6] = yAxis[2];
+    result.matrix[8] = zAxis[0];
+    result.matrix[9] = zAxis[1];
+    result.matrix[10] = zAxis[2];
+    result.matrix[12] = zAxis[0];
+    result.matrix[13] = zAxis[1];
+    result.matrix[14] = zAxis[2];
+    result.matrix[15] = 1;
+
+    return result;
+}
+
 Matrix Matrix::operator * (const Matrix mat) {
 	Matrix result;
 	for(int g = 0; g < 4; g++) {
@@ -105,38 +129,6 @@ vector<float> Matrix::multiplyVector(vector<float> vec) {
 		}
 	}
 	return data;
-}
-
-vector<float> Matrix::quaternion() {
-    vector<float> out(4, 0);
-
-    out[0] = 0;
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 1;
-
-    return out;
-}
-
-vector<float> Matrix::fromEuler(float x, float y, float z) {
-	vector<float> data(4, 0);
-
-    float halfToRad = 0.5*M_PI/180.0;
-    x *= halfToRad;
-    y *= halfToRad;
-    z *= halfToRad;
-    float sx = sin(x);
-    float cx = cos(x);
-    float sy = sin(y);
-    float cy = cos(y);
-    float sz = sin(z);
-    float cz = cos(z);
-    data[0] = sx * cy * cz - cx * sy * sz;
-    data[1] = cx * sy * cz + sx * cy * sz;
-    data[2] = cx * cy * sz - sx * sy * cz;
-    data[3] = cx * cy * cz + sx * sy * sz;
-
-    return data;
 }
 
 void Matrix::fromQuat(vector<float> quaternion) {
@@ -171,22 +163,16 @@ void Matrix::fromQuat(vector<float> quaternion) {
     this->matrix[15] = 1;
 }
 
-vector<float> Matrix::transformQuat(vector<float> vec, vector<float> quaternion) {
-	vector<float> data(3, 0);
+Matrix Matrix::transposeMatrix(Matrix matrix) {
+	Matrix result;
 
-    float x = vec[0], y = vec[1], z = vec[2];
-    float qx = quaternion[0], qy = quaternion[1], qz = quaternion[2], qw = quaternion[3];
+	for(int g = 0; g < 4; g++) {
+		for(int h = 0; h < 4; h++) {
+			result.matrix[g*4+h] = matrix.matrix[h*4+g];
+		}
+	}
 
-    float ix = qw * x + qy * z - qz * y;
-    float iy = qw * y + qz * x - qx * z;
-    float iz = qw * z + qx * y - qy * x;
-    float iw = -qx * x - qy * y - qz * z;
-
-    data[0] = ix * qw + iw * -qx + iy * -qz - iz * -qy;
-    data[1] = iy * qw + iw * -qy + iz * -qx - ix * -qz;
-    data[2] = iz * qw + iw * -qz + ix * -qy - iy * -qx;
-    
-    return data;
+    return result;
 }
 
 Matrix Matrix::inverseMatrix(Matrix matt) {
@@ -296,4 +282,109 @@ Matrix Matrix::inverseMatrix(Matrix matt) {
 	        (tmp_20 * m12 + tmp_23 * m22 + tmp_17 * m02));
 
 	return result;
+}
+
+vector<float> quaternion() {
+    vector<float> out(4, 0);
+
+    out[0] = 0;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 1;
+
+    return out;
+}
+
+vector<float> fromEuler(float x, float y, float z) {
+	vector<float> data(4, 0);
+
+    float halfToRad = 0.5*M_PI/180.0;
+    x *= halfToRad;
+    y *= halfToRad;
+    z *= halfToRad;
+    float sx = sin(x);
+    float cx = cos(x);
+    float sy = sin(y);
+    float cy = cos(y);
+    float sz = sin(z);
+    float cz = cos(z);
+    data[0] = sx * cy * cz - cx * sy * sz;
+    data[1] = cx * sy * cz + sx * cy * sz;
+    data[2] = cx * cy * sz - sx * sy * cz;
+    data[3] = cx * cy * cz + sx * sy * sz;
+
+    return data;
+}
+
+vector<float> transformQuat(vector<float> vec, vector<float> quaternion) {
+	vector<float> data(3, 0);
+
+    float x = vec[0], y = vec[1], z = vec[2];
+    float qx = quaternion[0], qy = quaternion[1], qz = quaternion[2], qw = quaternion[3];
+
+    float ix = qw * x + qy * z - qz * y;
+    float iy = qw * y + qz * x - qx * z;
+    float iz = qw * z + qx * y - qy * x;
+    float iw = -qx * x - qy * y - qz * z;
+
+    data[0] = ix * qw + iw * -qx + iy * -qz - iz * -qy;
+    data[1] = iy * qw + iw * -qy + iz * -qx - ix * -qz;
+    data[2] = iz * qw + iw * -qz + ix * -qy - iy * -qx;
+    
+    return data;
+}
+
+vector<float> cross(vector<float> a, vector<float> b) {
+    return vector<float> {
+    	a[1]*b[2]-a[2]*b[1],
+    	a[2]*b[0]-a[0]*b[2],
+    	a[0]*b[1]-a[1]*b[0]	
+    };
+}
+
+vector<float> addValues(vector<float> a, vector<float> b) {
+    return vector<float> {
+		a[0]+b[0],
+		a[1]+b[1],
+		a[2]+b[2]  	
+    };
+}
+
+vector<float> substractValues(vector<float> a, vector<float> b) {
+    return vector<float> {
+		a[0]-b[0],
+		a[1]-b[1],
+		a[2]-b[2]  	
+    };
+}
+
+float dot(vector<float> a, vector<float> b) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+vector<float> normalize(vector<float> v) {
+    float length = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+    if(length > 0.00001)
+        return vector<float>{v[0]/length, v[1]/length, v[2]/length};
+    else vector<float>{0, 0, 0};
+}
+
+float angle(vector<float> a, vector<float> b) {
+    float cosine = dot(normalize(a), normalize(b));
+    if(cosine > 1.0) {
+        return 0;
+    }
+    else if(cosine < -1.0) {
+        return M_PI;
+    } else {
+        return acos(cosine);
+    }
+}
+
+float distanceVecs(vector<float> a, vector<float> b) {
+    float x = b[0] - a[0];
+    float y = b[1] - a[1];
+    float z = b[2] - a[2];
+
+    return sqrt(x*x + y*y + z*z);
 }
