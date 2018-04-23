@@ -85,9 +85,6 @@ int main() {
 	spacecraftP = &spacecraft;
 	terrainP = &terrain;
 
-	glfwSetKeyCallback(window, input);
-	glfwSetCursorPosCallback(window, cursor);
-
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glViewport(0, 0, mode->width, mode->height);
 

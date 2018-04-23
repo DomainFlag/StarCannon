@@ -96,4 +96,4 @@ ObjHttp.prototype.fetchData = function(url, materials) {
     }.bind(this));
 };
 
-// objHttp = new ObjHttp(console.log, null, "X-Fighter");
+objHttp = new ObjHttp(console.log, null, "X-Fighter");

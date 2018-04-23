@@ -114,10 +114,10 @@ function readObject(data, materials) {
         "textureVertices" : [],
         "normalVertices" : []
     };
+
     let indexGeometricVertices = data.match(/v(\s(-?\d+\.\d+)){3}/g).map((occ) => occ.split(" ").slice(1, 4).map((nb) => Number(nb)));
     let indexTextureVertices = data.match(/vt(\s(-?\d+\.\d+)){2}/g).map((occ) => occ.split(" ").slice(1, 3).map((nb) => Number(nb)));
     let indexNormalVertices = data.match(/vn(\s(-?\d+\.\d+)){3}/g).map((occ) => occ.split(" ").slice(1, 4).map((nb) => Number(nb)));
-
 
     let chunks = data.split("usemtl");
     let orders;

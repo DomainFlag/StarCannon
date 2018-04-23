@@ -7,7 +7,6 @@
 #include <cmath>
 #include <assert.h>
 #include <unistd.h>
-#include <SOIL/SOIL.h>
 #include "Terrain.h"
 
 #include "./../Shader/Shader.h"

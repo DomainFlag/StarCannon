@@ -1,5 +1,5 @@
-#ifndef Sun_H
-#define Sun_H
+#ifndef SUN
+#define SUN
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
