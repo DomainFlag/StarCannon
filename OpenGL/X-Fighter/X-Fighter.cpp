@@ -62,26 +62,22 @@ void X_Fighter::setVariablesData() {
 	for(vector<GLuint>::iterator it = this->textures.begin(); it != this->textures.end(); it++) {
 		string texLocString = string("u_texture[") + to_string(counter) + string("]");
 		GLint unifTexLoc = glGetUniformLocation(this->program, texLocString.data());
-		cout << unifTexLoc << endl;
 		glUniform1i(unifTexLoc, counter);
 		glActiveTexture(GL_TEXTURE0+counter);
 
 		glGenTextures(1, &*it);
 		glBindTexture(GL_TEXTURE_2D, *it);
 
-		cout << "./../Tools/Obj/X-Fighter/" + this->data.textures[counter] << endl;
-
 		unsigned char * image = SOIL_load_image(("./../Tools/Obj/X-Fighter/" + this->data.textures[counter]).c_str(), &width, &height, 0, SOIL_LOAD_RGB);
 		if(image == NULL) {
-			cout << "./../Tools/Obj/X-Fighter/" + this->data.textures[counter] << endl;
 			cout << SOIL_last_result() << endl;
 			exit(1);
 		}
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 		// glGenerateMipmap(GL_TEXTURE_2D);
@@ -96,7 +92,7 @@ void X_Fighter::renderProgram() {
   
    this->transl.translation(this->translation[0], this->translation[1], this->translation[2]);
 
-   this->rotation[1] += 0.1;
+   this->rotation[1] += 0.03;
 
    vector<float> quat = fromEuler(this->rotation[0]/2/M_PI*360, this->rotation[1]/2/M_PI*360, this->rotation[2]/2/M_PI*360);
    this->modelView.fromQuat(quat);

@@ -22,7 +22,7 @@ public:
     GLuint posBuffer, texBuffer;
     GLint attribPosLoc, attribTexLoc, unifCameraLoc, unifProjectionLoc;
 
-    vector<float> translation{0, 0, -20};
+    vector<float> translation{0, 0, -25};
     vector<float> rotation{0, 0, 0};
 
     Matrix projection;
@@ -52,7 +52,7 @@ public:
     string fragmentShader = R"(
         #version 130
 
-        uniform sampler2D u_texture[8];
+        uniform sampler2D u_texture[5];
         varying vec3 v_texture;
 
         void main() {
@@ -67,12 +67,6 @@ public:
                 gl_FragColor = texture2D(u_texture[3], vec2(1, 1)-v_texture.xy);
             else if(texUnit == 4)
                 gl_FragColor = texture2D(u_texture[4], vec2(1, 1)-v_texture.xy);
-            else if(texUnit == 5)
-                gl_FragColor = texture2D(u_texture[5], vec2(1, 1)-v_texture.xy);
-            else if(texUnit == 6)
-                gl_FragColor = texture2D(u_texture[6], vec2(1, 1)-v_texture.xy);
-            else if(texUnit == 7)
-                gl_FragColor = texture2D(u_texture[7], vec2(1, 1)-v_texture.xy);
             else  gl_FragColor = texture2D(u_texture[3], v_texture.xy);
         } 
     )";

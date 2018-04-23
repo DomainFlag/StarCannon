@@ -47,10 +47,6 @@ void SkyLayer::cursorListener(GLFWwindow * window, double posX, double posY) {
    }
 };
 
-void SkyLayer::keyboardListener(GLFWwindow * window, int key, int scancode, int action, int mods) {
-
-};
-
 void SkyLayer::listenContinouslyToCursor() {
    this->yaw += this->traceYaw/360.0f*2.0f;
    this->pitch += -this->tracePitch/360.0f*2.0f;

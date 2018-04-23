@@ -1,18 +1,3 @@
-/*
-===============================================================================
-A C++ port of a speed-improved simplex noise algorithm for 2D in Java.
-Based on example code by Stefan Gustavson (stegu@itn.liu.se).
-Optimisations by Peter Eastman (peastman@drizzle.stanford.edu).
-Better rank ordering method by Stefan Gustavson in 2012.
-C++ port and minor type and algorithm changes by Josh Koch (jdk1337@gmail.com).
-This could be speeded up even further, but it's useful as it is.
-Version 2012-04-12
-The original Java code was placed in the public domain by its original author,
-Stefan Gustavson. You may use it as you see fit,
-but attribution is appreciated.
-===============================================================================
-*/
-
 #include "Noise.h"
 #include <cmath>
 

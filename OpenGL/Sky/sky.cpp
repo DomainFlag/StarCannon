@@ -74,10 +74,14 @@ int main(int argc, char ** argv) {
 	glfwSetKeyCallback(window, input);
 	glfwSetCursorPosCallback(window, cursor);
 
+	float rotX = 0;
+
 	while(!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		sky.renderProgram(vector<float>{0, 1, 0}, M_PI/2, 0);
+		rotX = fmod((rotX+0.01), 2*M_PI);
+
+		sky.renderProgram(vector<float>{0, sin(rotX), cos(rotX)}, rotX, 0);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

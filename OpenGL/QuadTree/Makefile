@@ -1,10 +1,10 @@
 SYSCONF_LINK = g++
-CPPFLAGS     = -std=c++11
+CPPFLAGS     = -g -Wall -std=c++11
 LDFLAGS      =
-LIBS         = -lGL -lGLEW -lglfw
+LIBS         = -lm -lSOIL -lGL -lGLEW -lglfw
 
 DESTDIR = ./
-TARGET  = Shot
+TARGET  = quadtree
 
 OBJECTS := $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 

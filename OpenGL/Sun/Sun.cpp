@@ -150,11 +150,13 @@ void Sun::setVariablesData() {
 void Sun::renderProgram() {
     glUseProgram(this->program);
 
+    this->rotX = fmod(this->rotX+0.01, 2*M_PI);
+
     this->rotationX.rotationX(this->rotX);
     this->rotationY.rotationY(this->rotY);
     this->rotationZ.rotationZ(this->rotZ);
 
-    Matrix viewMatrix = rotationX*rotationY*rotationZ;
+    this->viewMatrix = rotationX*rotationY*rotationZ;
 
     glBindBuffer(GL_ARRAY_BUFFER, this->posSunBuffer);
     glBufferData(GL_ARRAY_BUFFER, this->mesh.size()*sizeof(float), this->mesh.data(), GL_STATIC_DRAW);

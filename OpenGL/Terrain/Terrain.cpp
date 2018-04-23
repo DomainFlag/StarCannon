@@ -10,9 +10,9 @@
 #include "Terrain.h"
 
 #include "./../Shader/Shader.h"
-// #include "./../Shader/Shader.cpp"
+#include "./../Shader/Shader.cpp"
 #include "./../Tools/Matrix/Matrix.h"
-// #include "./../Tools/Matrix/Matrix.cpp"
+#include "./../Tools/Matrix/Matrix.cpp"
 #include "./../Tools/Noise/Noise.cpp"
 using namespace std;
 
@@ -92,9 +92,9 @@ void TerrainLayer::keyboardListener(GLFWwindow * window, int key, int scancode, 
 };
 
 void TerrainLayer::act() {
-	vector<float> quaternionRot = this->quaternionMatrix.fromEuler(-this->pitch/M_PI*360.0f, this->yaw/M_PI*360.0f, 0);
+	vector<float> quaternionRot = fromEuler(-this->pitch/M_PI*360.0f, this->yaw/M_PI*360.0f, 0);
 
-    vector<float> result = this->quaternionMatrix.transformQuat(vector<float>{0.0f, 0.0f, -this->terrain.speed}, quaternionRot);
+    vector<float> result = transformQuat(vector<float>{0.0f, 0.0f, -this->terrain.speed}, quaternionRot);
 
     for(unsigned int g = 0; g < this->terrain.mesh.size(); g += 3) {
         this->terrain.mesh[g] += result[0];
@@ -134,7 +134,7 @@ void TerrainLayer::setVariablesData() {
 	this->objectRotY.rotationY(0.0f);
 	this->objectRotZ.rotationZ(0.0f);
 
-	this->perspective.perspective(1.0f, this->mode->width/this->mode->height, 1.0f, 50.0f);
+	this->perspective.perspective((float) M_PI/3.0f, (float) this->mode->width/this->mode->height, 0.00001f, 30.0f);
 
 	glUniform3f(unifLowerColorLoc, 120.0f/360.0f, 76.0f/100.0f, 55.0f/100.0f);
 	glUniform3f(unifMedianColorLoc, 26.0f/360.0f, 36.0f/100.0f, 65.0f/100.0f);
@@ -158,8 +158,7 @@ void TerrainLayer::renderProgram() {
 	this->listenContinouslyToCursor();
 	this->act();
 
-	vector<float> quaternion = this->quaternionMatrix.quaternion();
-	vector<float> quaternionRot = this->quaternionMatrix.fromEuler(-this->pitch/M_PI*360.0f, this->yaw/M_PI*360.0f, 0);
+	vector<float> quaternionRot = fromEuler(-this->pitch/M_PI*360.0f, this->yaw/M_PI*360.0f, 0);
 	this->quaternionMatrix.fromQuat(quaternionRot);
 
 	this->cameraTranslation.translation(translation[0], 1.0f+translation[1], translation[2]);
@@ -169,7 +168,6 @@ void TerrainLayer::renderProgram() {
 	this->objectRotX.rotationX(0.0f);
 	this->objectRotY.rotationY(0.0f);
 	this->objectRotZ.rotationZ(0.0f);
-	this->perspective.perspective(1.0f, this->mode->width/this->mode->height, 1.0f, 50.0f);
 
 	this->modelMatrix = objectRotX*objectRotY*objectRotZ;
 

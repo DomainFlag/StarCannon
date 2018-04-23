@@ -2,15 +2,12 @@
 #define OCEANLAYER
 
 #include <GL/glew.h>
-#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <map>
 #include <cmath>
-#include <assert.h>
-#include <unistd.h>
 #include <SOIL/SOIL.h>
 #include "./../Tools/Matrix/Matrix.h"
 using namespace std;
@@ -133,16 +130,9 @@ public:
 
 class OceanLayer {
 public:
-	Matrix * translation = new Matrix();
-	Matrix * projection = new Matrix();
-	Matrix * u_swap1 = new Matrix();
-	Matrix * u_swap2 = new Matrix();
-
-	Matrix * rotationX = new Matrix();
-	Matrix * rotationY = new Matrix();
-	Matrix * rotationZ = new Matrix();
+	Matrix translation, projection, rotationX, rotationY, rotationZ;
+	Matrix viewMatrix;
 	float rotX = 0.0f, rotY = 0.0f, rotZ = 0.0f;
-	Matrix * translationXYZ = new Matrix();
 	float distance = 0.0f;
 
 	const GLFWvidmode * mode;

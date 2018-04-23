@@ -59,8 +59,6 @@ public:
 
    void cursorListener(GLFWwindow * window, double posX, double posY);
 
-   void keyboardListener(GLFWwindow * window, int key, int scancode, int action, int mods);
-
    void listenContinouslyToCursor();
 
    void setParameters();

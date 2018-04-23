@@ -41,7 +41,7 @@ public:
     unsigned int meshNbElements = 0;
 
     float partition = 1.0f/15.0f;
-    float speed = this->partition/2.0f;
+    float speed = this->partition/3.0f;
 
     Terrain() {};
 
@@ -127,7 +127,7 @@ public:
         void main() {
             vec4 camera = u_camera*u_model*a_position;
             vec4 result = u_perspective*camera;
-            gl_Position = vec4(result.xy, -1.0, result.w);
+            gl_Position = result;
             v_depth = (a_position.y+1.0/2.5)*5.0/4.0; //->[0, 1]
             v_far = -camera.z; //->[0.0, inf]
         }

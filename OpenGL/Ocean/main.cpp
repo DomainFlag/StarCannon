@@ -1,5 +1,4 @@
 #include <GL/glew.h>
-#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <fstream>
@@ -20,43 +19,32 @@ void input(GLFWwindow * window, int key, int action, int u, int i) {
 	switch(key) {
 		case GLFW_KEY_Q : {
 			oceanLayer->rotX += 0.05;
-			oceanLayer->rotationX->rotationX(oceanLayer->rotX);
+			oceanLayer->rotationX.rotationX(oceanLayer->rotX);
 			break;
 		};
 		case GLFW_KEY_W : {
 			oceanLayer->rotY += 0.05;
-			oceanLayer->rotationY->rotationY(oceanLayer->rotY);
+			oceanLayer->rotationY.rotationY(oceanLayer->rotY);
 			break;
 		};
 		case GLFW_KEY_A : {
 			oceanLayer->rotX -= 0.05;
-			oceanLayer->rotationX->rotationX(oceanLayer->rotX);
+			oceanLayer->rotationX.rotationX(oceanLayer->rotX);
 			break;
 		};
 		case GLFW_KEY_S : {
 			oceanLayer->rotY -= 0.05;
-			oceanLayer->rotationY->rotationY(oceanLayer->rotY);
+			oceanLayer->rotationY.rotationY(oceanLayer->rotY);
 			break;
 		};
 		case GLFW_KEY_E : {
 			oceanLayer->rotZ += 0.05;
-			oceanLayer->rotationZ->rotationZ(oceanLayer->rotZ);
+			oceanLayer->rotationZ.rotationZ(oceanLayer->rotZ);
 			break;
 		};
 		case GLFW_KEY_D : {
 			oceanLayer->rotZ -= 0.05;
-			oceanLayer->rotationZ->rotationZ(oceanLayer->rotZ);
-			break;
-		};
-
-		case GLFW_KEY_R : {
-			oceanLayer->distance += 0.05;
-			oceanLayer->translationXYZ->translation(0.0f, oceanLayer->distance, 0.0f);
-			break;
-		};
-		case GLFW_KEY_F : {
-			oceanLayer->distance -= 0.05;
-			oceanLayer->translationXYZ->translation(0.0f, oceanLayer->distance, 0.0f);
+			oceanLayer->rotationZ.rotationZ(oceanLayer->rotZ);
 			break;
 		};
 	};

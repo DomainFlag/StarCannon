@@ -1,7 +1,6 @@
 #include "Ocean.h"
 
 #include <GL/glew.h>
-#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <fstream>
@@ -11,6 +10,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <SOIL/SOIL.h>
+#include "./../Tools/Matrix/Matrix.cpp"
+#include "./../Tools/Matrix/Matrix.h"
 using namespace std;
 
 static unsigned int CompileShader(unsigned int type, const string& source) {
@@ -60,16 +61,15 @@ static int CreateProgram(const string& vertexShader, const string& fragmentShade
 
 OceanLayer::OceanLayer(const GLFWvidmode * mode) {
 		this->mode = mode;
-		this->projection->projection(mode->width, mode->height, 1000.0f);
-		this->translation->translation(0.0f, 0.0f, 0.0f);
-		this->translationX = 0;
+		this->projection.projection(mode->width, mode->height, 1000.0f);
+		this->translation.translation(0.0f, 0.0f, 0.0f);
 
 		this->ocean.setHoneycomb(this->mode);
 		this->ocean.parseHoneycomb();
 
-		this->rotationX->rotationX(0.0f);
-		this->rotationY->rotationX(0.0f);
-		this->rotationZ->rotationX(0.0f);
+		this->rotationX.rotationX(0.0f);
+		this->rotationY.rotationX(0.0f);
+		this->rotationZ.rotationX(0.0f);
 
 		srand(time(NULL));
 
@@ -133,17 +133,11 @@ void OceanLayer::renderOcean() {
 	// else
 	// 	translation->translation(0, translation->matrix[13]-ocean.speed, 0);
 
-	this->u_swap1->multiplyMatrices(this->translation, this->projection);
-	glUniformMatrix4fv(this->uniformMatrixLocation, 1, GL_FALSE, this->u_swap1->matrix);
+	this->viewMatrix = this->translation*this->rotationX*this->rotationY*this->rotationZ;
+	glUniformMatrix4fv(this->uniformMatrixLocation, 1, GL_FALSE, this->projection.matrix.data());
+	glUniformMatrix4fv(this->uniformRotationLocation, 1, GL_FALSE, this->viewMatrix.matrix.data());
 
-	for(int g = 0; g < 16; g++)
-		this->u_swap1->matrix[g] = 0;
-	this->u_swap1->multiplyMatrices(this->translationXYZ, this->rotationX);
-	this->u_swap2->multiplyMatrices(this->u_swap1, this->rotationY);
-	this->u_swap1->multiplyMatrices(this->u_swap2, this->rotationZ);
-	glUniformMatrix4fv(this->uniformRotationLocation, 1, GL_FALSE, this->u_swap1->matrix);
-
-	glUniform1f(this->uniformTranslation, translation->matrix[13]/mode->height*2.0-1.0);
+	glUniform1f(this->uniformTranslation, this->translation.matrix[13]/mode->height*2.0-1.0);
 	glUniform1f(this->uniformDepthCurrentLocation, 200);
 	glUniform1f(this->uniformDepthMaxLocation, 1000);
 	glUniform1f(this->uniformRandomLocation, noise.getNoise());
@@ -151,8 +145,4 @@ void OceanLayer::renderOcean() {
 	glDrawArrays(GL_TRIANGLES, 0, this->ocean.getNbTriangles());
 }
 
-void OceanLayer::freeOcean() {
-	glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
-
-	delete u_swap1, u_swap2, translation, projection, rotationX, rotationY, rotationZ, translationXYZ;
-}
+void OceanLayer::freeOcean() {}
