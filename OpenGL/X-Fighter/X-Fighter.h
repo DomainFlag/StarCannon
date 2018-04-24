@@ -22,11 +22,12 @@ public:
     GLuint posBuffer, texBuffer;
     GLint attribPosLoc, attribTexLoc, unifCameraLoc, unifProjectionLoc;
 
-    vector<float> translation{0, 0, -25};
-    vector<float> rotation{0, 0, 0};
+    vector<float> position{-12, -12, 0};
+    vector<float> translation{0, 0, 0};
+    vector<float> rotation{0, -M_PI/2.0f, 0};
 
     Matrix projection;
-    Matrix modelView, transl;
+    Matrix modelView, transl, scaling;
 
     vector<GLuint> textures;
 

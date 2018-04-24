@@ -44,7 +44,7 @@ public:
 
 	void rotationZ(float rotation);
 
-	void scalling(float x, float y, float z);
+	void scaling(float x, float y, float z);
 
 	void projection(float x, float y, float z);
 

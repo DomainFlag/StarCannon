@@ -13,30 +13,33 @@ class Thruster {
 public:
    GLuint program;
 
+   const GLFWvidmode * mode;
+
    float maxSpeed = 0.05;
    float minSpeed = 0.01;
    float stepSpeed = 0.005;
    float speed = this->minSpeed;
 
-   float tail = 0.5;
+   float tail = 0.6;
    vector<float> color{114, 236, 254};
    float errorX = 0.01;
    float errorY = 0.005;
-   float amplitude = 0.6;
+   float amplitude = 0.4;
 
    float nbParticles = 60000;
    float range = 0.8;
 
    vector<float> particles;
 
-   GLint attribPosLoc, unifModelViewLoc, unifColorLoc, unifTailLoc, unifScalarTailNormalizerLoc;
+   GLint attribPosLoc, unifModelViewLoc, uniProjectionLoc, unifColorLoc, unifTailLoc, unifScalarTailNormalizerLoc;
 
    GLuint posBuffer;
 
-   float rotationX = 0, rotationY = 0, rotationZ = 0;
+   float rotationX = 0, rotationY = -M_PI/2.0f, rotationZ = 0;
+   vector<float> transl{0, -0.76, -0.8};
 
-   Matrix rotX, rotY, rotZ, translation;
-   Matrix modelView;
+   Matrix translation;
+   Matrix modelView, projection;
 
    string vertexShader = R"(
       #version 130
@@ -44,6 +47,7 @@ public:
       attribute vec4 a_position;
       
       uniform mat4 u_model;
+      uniform mat4 u_projection;
       uniform float u_tail;
       uniform float u_scalarTailNormalizer;
       
@@ -53,8 +57,8 @@ public:
       void main() {
           gl_PointSize = 1.5;
           
-          vec4 pos = u_model*vec4(a_position.xyz, 1.0);
-          gl_Position = vec4(pos.xyz, 1.0);
+          vec4 pos = u_projection*u_model*vec4(a_position.xyz, 1.0);
+          gl_Position = pos;
           
           float len = length(vec3(0, a_position.yz))/a_position.w;
           
@@ -102,7 +106,7 @@ public:
       }
    )";
 
-   Thruster();
+   Thruster(const GLFWvidmode * mode);
 
    vector<float> projectParticleProperties(float x);
 

@@ -57,7 +57,7 @@ void Matrix::rotationZ(float rotation) {
 	this->matrix[5] = c;
 }
 
-void Matrix::scalling(float x, float y, float z) {
+void Matrix::scaling(float x, float y, float z) {
 	this->matrix[0] = x;
 	this->matrix[5] = y;
 	this->matrix[10] = z;
@@ -125,7 +125,7 @@ vector<float> Matrix::multiplyVector(vector<float> vec) {
 	vector<float> data(4, 0);
 	for(int h = 0; h < 4; h++) {
 		for(int i = 0; i < 4; i++) {
-			data[h] += this->matrix[h*4+i]*vec[i];
+			data[h] += this->matrix[i*4+h]*vec[i];
 		}
 	}
 	return data;

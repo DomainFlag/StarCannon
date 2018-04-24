@@ -3,14 +3,15 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include "./X-Fighter.h"
 #include <SOIL/SOIL.h>
+#include "./X-Fighter.h"
 #include "./../Tools/ObjReader/OBJReader.h"
-#include "./../Tools/ObjReader/OBJReader.cpp"
 #include "./../Shader/Shader.h"
 #include "./../Tools/Matrix/Matrix.h"
-#include "./../Shader/Shader.cpp"
-#include "./../Tools/Matrix/Matrix.cpp"
+
+// #include "./../Shader/Shader.cpp"
+// #include "./../Tools/Matrix/Matrix.cpp"
+// #include "./../Tools/ObjReader/OBJReader.cpp"
 
 using namespace std;
 
@@ -27,9 +28,10 @@ X_Fighter::X_Fighter(const GLFWvidmode * mode) {
 }
 
 void X_Fighter::setParameters() {
-   glEnable(GL_DEPTH_TEST);
-   glDisable(GL_PROGRAM_POINT_SIZE);
-   glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_PROGRAM_POINT_SIZE);
+	glDisable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
 };
 
 void X_Fighter::setVariablesLocation() {
@@ -55,6 +57,8 @@ void X_Fighter::setVariablesData() {
 	glBindBuffer(GL_ARRAY_BUFFER, this->texBuffer);
 	glBufferData(GL_ARRAY_BUFFER, this->data.textureVertices.size()*sizeof(float), this->data.textureVertices.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(this->attribTexLoc, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	this->scaling.scaling(0.03, 0.03, 0.03);
 
 	int width, height;
 	int counter = 0;
@@ -88,28 +92,29 @@ void X_Fighter::setVariablesData() {
 };
 
 void X_Fighter::renderProgram() {
-   glUseProgram(this->program);
-  
-   this->transl.translation(this->translation[0], this->translation[1], this->translation[2]);
+	this->setParameters();
+	glUseProgram(this->program);
 
-   this->rotation[1] += 0.03;
+	this->transl.translation(this->translation[0]+this->position[0], 
+		this->translation[1]+this->position[1], 
+		this->translation[2]+this->position[2]);
 
-   vector<float> quat = fromEuler(this->rotation[0]/2/M_PI*360, this->rotation[1]/2/M_PI*360, this->rotation[2]/2/M_PI*360);
-   this->modelView.fromQuat(quat);
-   this->modelView = this->modelView*this->transl;
+	vector<float> quat = fromEuler(this->rotation[0]/2/M_PI*360, this->rotation[1]/2/M_PI*360, this->rotation[2]/2/M_PI*360);
+	this->modelView.fromQuat(quat);
+	this->modelView = this->transl*this->modelView*this->scaling;
 
-   glBindBuffer(GL_ARRAY_BUFFER, this->posBuffer);
-   glBufferData(GL_ARRAY_BUFFER, this->data.geometricVertices.size()*sizeof(float), this->data.geometricVertices.data(), GL_STATIC_DRAW);
-   glVertexAttribPointer(this->attribPosLoc, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindBuffer(GL_ARRAY_BUFFER, this->posBuffer);
+	glBufferData(GL_ARRAY_BUFFER, this->data.geometricVertices.size()*sizeof(float), this->data.geometricVertices.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(this->attribPosLoc, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-   glBindBuffer(GL_ARRAY_BUFFER, this->texBuffer);
-   glBufferData(GL_ARRAY_BUFFER, this->data.textureVertices.size()*sizeof(float), this->data.textureVertices.data(), GL_STATIC_DRAW);
-   glVertexAttribPointer(this->attribTexLoc, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindBuffer(GL_ARRAY_BUFFER, this->texBuffer);
+	glBufferData(GL_ARRAY_BUFFER, this->data.textureVertices.size()*sizeof(float), this->data.textureVertices.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(this->attribTexLoc, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-   glUniformMatrix4fv(this->unifCameraLoc, 1, GL_FALSE, this->modelView.matrix.data());
-   glUniformMatrix4fv(this->unifProjectionLoc, 1, GL_FALSE, this->projection.matrix.data());
+	glUniformMatrix4fv(this->unifCameraLoc, 1, GL_FALSE, this->modelView.matrix.data());
+	glUniformMatrix4fv(this->unifProjectionLoc, 1, GL_FALSE, this->projection.matrix.data());
 
-   glDrawArrays(GL_TRIANGLES, 0, (int) this->data.geometricVertices.size()/3.0f);
+	glDrawArrays(GL_TRIANGLES, 0, (int) this->data.geometricVertices.size()/3.0f);
 };
 
 void X_Fighter::freeProgram() {};

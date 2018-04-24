@@ -1,9 +1,14 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
-
-#include "Box.h"
 using namespace std;
+
+const vector<vector<int>> cycle = {
+	vector<int> {0, 0},
+	vector<int> {1, 0},
+	vector<int> {1, 1},
+	vector<int> {0, 1}
+};
 
 Box::Box() {};
 
@@ -19,6 +24,11 @@ bool Box::checkPartition() {
     return ((this->x1-this->x0 >= 1) && (this->y1-this->y0 >= 1));
 };
 
+void Box::print() {
+	cout << "---Box---" << endl;
+	cout << "x0: " << this->x0 << " x1: " << this->x1 << endl;
+	cout << "y0: " << this->y0 << " y1: " << this->y1 << endl;
+}
 
 vector<Box> Box::getPartitions() {
     int diffX = this->x1-this->x0;
@@ -29,12 +39,10 @@ vector<Box> Box::getPartitions() {
 
     int xMax, yMax;
     vector<Box> boxes;
-    for(int g = 0; g < 2; g++) {
-        for(int h = 0; h < 2; h++) {
-            xMax = min(this->x0+partX*(g+1), this->x1);
-            yMax = min(this->y0+partY*(h+1), this->y1);
-            boxes.push_back(Box(this->x0+partX*g, this->y0+partY*h, xMax, yMax));
-        }
+    for(int g = 0; g < cycle.size(); g++) {
+    	xMax = min(this->x0+partX*(cycle[g][0]+1), this->x1);
+    	yMax = min(this->y0+partY*(cycle[g][1]+1), this->y1);
+    	boxes.push_back(Box(this->x0+partX*cycle[g][0], this->y0+partY*cycle[g][1], xMax, yMax));
     }
 
     return boxes;
@@ -51,12 +59,12 @@ vector<int> Box::getVerticesCoord(int tCols) {
         this->y1*tCols + this->x1,
         this->y1*tCols + this->x1,
         this->y0*tCols + this->x1,
-        this->y0*tCols + this->x0,
+        this->y0*tCols + this->x0
     };
 };
 
 vector<int> Box::getLinesCoord(int tCols, int index) {
-    if(index == 0 || index == 3)
+    if(index == 0 || index == 2)
         return vector<int>{
             this->y0*tCols + this->x0,
             this->y1*tCols + this->x0,
@@ -69,7 +77,7 @@ vector<int> Box::getLinesCoord(int tCols, int index) {
             this->y0*tCols + this->x1,
             this->y1*tCols + this->x1
         };
-    else if(index == 1 || index == 2)
+    else if(index == 1 || index == 3)
     	return vector<int>{
             this->y0*tCols + this->x1,
             this->y1*tCols + this->x1,

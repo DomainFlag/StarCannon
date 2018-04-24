@@ -8,12 +8,14 @@
 #include "./Thruster.h"
 #include "./../Shader/Shader.h"
 #include "./../Tools/Matrix/Matrix.h"
-#include "./../Shader/Shader.cpp"
-#include "./../Tools/Matrix/Matrix.cpp"
+
+// #include "./../Shader/Shader.cpp"
+// #include "./../Tools/Matrix/Matrix.cpp"
 using namespace std;
 
-Thruster::Thruster() {
+Thruster::Thruster(const GLFWvidmode * mode) {
    this->program = CreateProgram(this->vertexShader, this->fragmentShader);
+   this->mode = mode;
 
    srand(time(NULL));
 
@@ -125,6 +127,7 @@ void Thruster::setParameters() {
    glEnable(GL_PROGRAM_POINT_SIZE);
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+   glEnable(GL_CULL_FACE);
 };
 
 void Thruster::setVariablesLocation() {
@@ -132,16 +135,16 @@ void Thruster::setVariablesLocation() {
 
    this->attribPosLoc = glGetAttribLocation(this->program, "a_position");
    this->unifModelViewLoc = glGetUniformLocation(this->program, "u_model");
+   this->uniProjectionLoc = glGetUniformLocation(this->program, "u_projection");
    this->unifColorLoc = glGetUniformLocation(this->program, "u_color");
    this->unifTailLoc = glGetUniformLocation(this->program, "u_tail");
    this->unifScalarTailNormalizerLoc = glGetUniformLocation(this->program, "u_scalarTailNormalizer");
 };
 
 void Thruster::setVariablesData() {
-   this->translation.translation(0, 0, 0);
-   this->rotX.rotationX(0);
-   this->rotY.rotationY(0);
-   this->rotZ.rotationZ(0);
+   this->translation.translation(this->transl[0], this->transl[1], this->transl[2]);
+
+   this->projection.perspective(M_PI/3.0f, this->mode->width/this->mode->height, 0.001, 30);
 
    glEnableVertexAttribArray(this->attribPosLoc);
    glGenBuffers(1, &this->posBuffer);
@@ -151,25 +154,26 @@ void Thruster::setVariablesData() {
 };
 
 void Thruster::renderProgram() {
-   glUseProgram(this->program);
+	this->setParameters();
+	glUseProgram(this->program);
 
-   this->act();
+	this->act();
 
-   vector<float> quat = fromEuler(this->rotationX/2/M_PI*360, this->rotationY/2/M_PI*360, this->rotationZ/2/M_PI*360);
-   this->modelView.fromQuat(quat);
-   this->modelView = this->modelView*this->translation;
+	vector<float> quat = fromEuler(this->rotationX/2/M_PI*360, this->rotationY/2/M_PI*360, this->rotationZ/2/M_PI*360);
+	this->modelView.fromQuat(quat);
+	this->modelView = this->modelView*this->translation;
 
-   glBindBuffer(GL_ARRAY_BUFFER, this->posBuffer);
-   glBufferData(GL_ARRAY_BUFFER, this->particles.size()*sizeof(float), this->particles.data(), GL_DYNAMIC_DRAW);
-   glVertexAttribPointer(this->attribPosLoc, 4, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindBuffer(GL_ARRAY_BUFFER, this->posBuffer);
+	glBufferData(GL_ARRAY_BUFFER, this->particles.size()*sizeof(float), this->particles.data(), GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(this->attribPosLoc, 4, GL_FLOAT, GL_FALSE, 0, NULL);
 
-   glUniformMatrix4fv(this->unifModelViewLoc, 1, GL_FALSE, this->modelView.matrix.data());
-   glUniform3fv(this->unifColorLoc, 1, this->color.data());
-   glUniform1f(this->unifTailLoc, this->tail);
-   glUniform1f(this->unifScalarTailNormalizerLoc, 1/exp(-2.0f*this->tail));
+	glUniformMatrix4fv(this->unifModelViewLoc, 1, GL_FALSE, this->modelView.matrix.data());
+	glUniformMatrix4fv(this->uniProjectionLoc, 1, GL_FALSE, this->projection.matrix.data());
+	glUniform3fv(this->unifColorLoc, 1, this->color.data());
+	glUniform1f(this->unifTailLoc, this->tail);
+	glUniform1f(this->unifScalarTailNormalizerLoc, 1/exp(-2.0f*this->tail));
 
-
-   glDrawArrays(GL_POINTS, 0, this->nbParticles);
+	glDrawArrays(GL_POINTS, 0, this->nbParticles);
 };
 
 void Thruster::freeProgram() {};

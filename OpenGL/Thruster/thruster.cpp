@@ -62,7 +62,7 @@ int main() {
 
    cout << glGetString(GL_VERSION) << endl;
 
-   Thruster thruster;
+   Thruster thruster(mode);
    thruster_p = &thruster;
 
    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

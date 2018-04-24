@@ -9,7 +9,7 @@
 using namespace std;
 
 int main() {
-	vector<int> data;
+	vector<vector<float>> data;
 	readFile(data, "./../Heightmap/heightmap.jpg");
 
 	return 0;

@@ -9,6 +9,6 @@
 
 using namespace std;
 
-void readFile(vector<int> & data, string pathname);
+void readFile(vector<vector<float>> & data, string pathname);
 
 #endif

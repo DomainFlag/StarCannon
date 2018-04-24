@@ -14,7 +14,7 @@ int main() {
 
    const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
-   window = glfwCreateWindow(mode->width, mode->height, "Shot rendering", glfwGetPrimaryMonitor(), NULL);
+   window = glfwCreateWindow(mode->width, mode->height, "X-FIGHTER rendering", glfwGetPrimaryMonitor(), NULL);
 
    if(!window) {
       glfwTerminate();

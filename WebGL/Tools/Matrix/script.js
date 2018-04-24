@@ -246,13 +246,13 @@ function transformQuat(out, a, q) {
 
 function multiplyVector(matrix, vector) {
     let vec = [0, 0, 0, 0];
+    
     for(let g = 0; g < 4; g++) {
         for(let h = 0; h < 4; h++) {
             vec[g] += matrix[h*4+g]*vector[h];
         }
     }
 
-    // return vec.slice(0, 3);
     return vec;
 }
 

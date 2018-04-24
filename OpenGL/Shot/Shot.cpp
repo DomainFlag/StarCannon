@@ -8,8 +8,8 @@
 #include "./Shot.h"
 #include "./../Shader/Shader.h"
 #include "./../Tools/Matrix/Matrix.h"
-#include "./../Shader/Shader.cpp"
-#include "./../Tools/Matrix/Matrix.cpp"
+// #include "./../Shader/Shader.cpp"
+// #include "./../Tools/Matrix/Matrix.cpp"
 using namespace std;
 
 Shot::Shot(const GLFWvidmode * mode, vector<float> transl, vector<float> rotat) {

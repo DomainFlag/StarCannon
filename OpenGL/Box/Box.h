@@ -15,6 +15,8 @@ public:
 
 	Box(int x0, int y0, int x1, int y1);
 
+	void print();
+
 	bool checkPartition();
 
 	vector<Box> getPartitions();

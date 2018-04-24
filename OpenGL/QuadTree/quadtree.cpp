@@ -5,10 +5,11 @@
 using namespace std;
 
 int main() {
-	QuadTree quadtree;
-	cout << quadtree.tree.children[0].vertices[0] << endl;
-	cout << quadtree.tree.children[0].vertices[1] << endl;
-	cout << quadtree.tree.children[0].vertices[2] << endl;
-	cout << quadtree.tree.children[0].vertices[3] << endl;
+	QuadTree * quadtree = new QuadTree;
+
+	quadtree->tree->children[0]->children[0]->children[0]->children[0]->box.print();
+
+	delete quadtree;
+
 	return 0;
 }

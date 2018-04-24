@@ -9,7 +9,7 @@
 
 using namespace std;
 
-void readFile(vector<int> & data, string pathname) {
+void readFile(vector<vector<float>> & data, string pathname) {
 	int width, height, channel;
 	
 	unsigned char * pixels = SOIL_load_image(pathname.c_str(), &width, &height, &channel, SOIL_LOAD_RGB);
@@ -21,13 +21,20 @@ void readFile(vector<int> & data, string pathname) {
 
 	int max_size = min(width, height);
 
-	data.resize(max_size*max_size);
+	int tSize = max_size*max_size;
+	data.resize(tSize);
+
+	int counter = 0;
+	float section = 12.0f/max_size;
 
 	for(int g = 0; g < max_size; g++) {
 		for(int h = 0; h < max_size; h++) {
-			data.push_back((int) pixels[(g + h * max_size) * 3 + 0]);
-			data.push_back((int) pixels[(g + h * max_size) * 3 + 1]);
-			data.push_back((int) pixels[(g + h * max_size) * 3 + 2]);
+			data[counter] = vector<float> {
+				section*h-6.0f,
+				((float) (int) pixels[(g + h * width) * 3])*4.0f/255.0f-2.0f,
+				section*g-6.0f
+			};
+			counter++;
 		}
 	}
 

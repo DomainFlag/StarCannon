@@ -4,7 +4,7 @@ LDFLAGS      =
 LIBS         = -lm -lSOIL -lGL -lGLEW -lglfw
 
 DESTDIR = ./
-TARGET  = quadtree
+TARGET  = lod
 
 OBJECTS := $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 
