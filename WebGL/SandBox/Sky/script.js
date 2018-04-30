@@ -214,7 +214,7 @@ Sky.prototype.render = function(viewMatrix, projection) {
 
     let vector = multiplyVector(viewMatrix, this.sun.position);
 
-    let pitch = Math.sin(-sliders[0].value/360*2*Math.PI)+0.3;
+    let pitch = Math.sin(-this.rotationX)+0.3;
     let yaw = Math.cos(sliders[1].value/360*2*Math.PI);
 
     gl.uniform1f(this.unifPitchLoc, pitch);
@@ -312,9 +312,9 @@ Sun.prototype.render = function(viewMatrix, projection) {
 function drawScene(time) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // sky.act(time);
+    sky.act(time);
 
-    let objectRotX = matrices["rotationX"](sliders[0].value/360*2*Math.PI);
+    let objectRotX = matrices["rotationX"](sky.rotationX);
     let objectRotY = matrices["rotationY"](sliders[1].value/360*2*Math.PI);
     let objectRotZ = matrices["rotationZ"](sliders[2].value/360*2*Math.PI);
     let perspective = matrices["perspective"](Math.PI/3.0, gl.canvas.width/gl.canvas.height, 0.01, 10);
@@ -323,7 +323,7 @@ function drawScene(time) {
 
     sky.render(viewMatrix, perspective);
 
-    // requestAnimationFrame(drawScene);
+    requestAnimationFrame(drawScene);
 }
 
 function resize(gl) {

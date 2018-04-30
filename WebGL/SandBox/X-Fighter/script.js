@@ -119,6 +119,8 @@ let objHttp = new ObjHttp(initGL, gl, "X-Fighter");
 function drawScene(gl) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    sliders[4].value += 0.01;
+
     let perspective = matrices["perspective"](Math.PI/3.0, gl.canvas.width/gl.canvas.height, 0.0001, 200);
 
     let translM = matrices["translation"](sliders[0].value, sliders[1].value, sliders[2].value);
@@ -133,6 +135,8 @@ function drawScene(gl) {
     gl.uniformMatrix4fv(unifProjectionLoc, false, perspective);
 
     gl.drawArrays(gl.TRIANGLES, 0, objHttp.data.vertices.geometricVertices.length/3);
+
+    requestAnimationFrame(drawScene.bind(this, gl));
 }
 
 function resize(gl) {

@@ -1,0 +1,11 @@
+.frame_counter {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    transform: translate(-150%, 50%);
+}
+
+.frame_display {
+    font-family: "San Francisco Display", sans-serif;
+    font-size: 36px;
+}

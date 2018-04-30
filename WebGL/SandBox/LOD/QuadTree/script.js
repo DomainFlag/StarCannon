@@ -8,6 +8,13 @@
  * terrain within the the visible area not clipped by the frustum.
  */
 
+const boxCycle = [
+    [0, 0],
+    [0, 1],
+    [1, 1],
+    [1, 0]
+];
+
 /**
  * Containing terrain 2D Box that spans from [x0, x1] to [y0, y1], inclusive
  * where x and y corresponds to cols and rows respectively.
@@ -44,13 +51,11 @@ Box.prototype.getPartitions = function() {
 
     let xMax, yMax;
     let boxes = [];
-    for(let g = 0; g < 2; g++) {
-        for(let h = 0; h < 2; h++) {
-            xMax = Math.min(this.x0+partX*(g+1), this.x1);
-            yMax = Math.min(this.y0+partY*(h+1), this.y1);
-            boxes.push(new Box(this.x0+partX*g, this.y0+partY*h, xMax, yMax));
-        }
-    }
+    boxCycle.forEach((cycle) => {
+        xMax = Math.min(this.x0+partX*(cycle[1]+1), this.x1);
+        yMax = Math.min(this.y0+partY*(cycle[0]+1), this.y1);
+        boxes.push(new Box(this.x0+partX*cycle[1], this.y0+partY*cycle[0], xMax, yMax));
+    });
 
     return boxes;
 };
@@ -63,21 +68,55 @@ Box.prototype.checkBoundary  = function(tCols) {
  * Giving the box calculate vertices coordinates in the heightmap mesh to be fetched
  * latter and to be stored into leafs.
  * @param tCols
+ * @param index
  * @returns {*[]}
  */
-Box.prototype.getVerticesCoord = function(tCols) {
-    return [
-        this.y0*tCols + this.x0,
-        this.y1*tCols + this.x0,
-        this.y1*tCols + this.x1,
-        this.y1*tCols + this.x1,
-        this.y0*tCols + this.x1,
-        this.y0*tCols + this.x0,
-    ];
+Box.prototype.getVerticesCoord = function(tCols, index) {
+    if(index === 0)
+    //Top-Left
+        return [
+            this.y0*tCols + this.x0,
+            this.y1*tCols + this.x0,
+            this.y1*tCols + this.x1,
+            this.y1*tCols + this.x1,
+            this.y0*tCols + this.x1,
+            this.y0*tCols + this.x0
+        ];
+    else if(index === 1)
+    //Top-Right
+        return [
+            this.y0*tCols + this.x1,
+            this.y1*tCols + this.x1,
+            this.y1*tCols + this.x0,
+            this.y1*tCols + this.x0,
+            this.y0*tCols + this.x1,
+            this.y0*tCols + this.x0
+        ];
+    else if(index === 2)
+    //Bottom-Right
+        return [
+            this.y0*tCols + this.x1,
+            this.y1*tCols + this.x1,
+            this.y0*tCols + this.x0,
+            this.y0*tCols + this.x0,
+            this.y1*tCols + this.x1,
+            this.y1*tCols + this.x0
+        ];
+    else if(index === 3)
+    //Bottom-Left
+        return [
+            this.y0*tCols + this.x0,
+            this.y1*tCols + this.x0,
+            this.y0*tCols + this.x1,
+            this.y0*tCols + this.x1,
+            this.y1*tCols + this.x1,
+            this.y1*tCols + this.x0
+        ];
 };
 
 Box.prototype.getLinesCoord = function(tCols, index) {
-    if(index === 0 || index === 3)
+    if(index === 0 || index === 2)
+    //Top-Left && Bottom-Right
         return [
             this.y0*tCols + this.x0,
             this.y1*tCols + this.x0,
@@ -90,7 +129,8 @@ Box.prototype.getLinesCoord = function(tCols, index) {
             this.y0*tCols + this.x1,
             this.y1*tCols + this.x1
         ];
-    else if(index === 1 || index === 2)
+    else if(index === 1 || index === 3)
+    //Top-Right && Bottom-Left
         return [
             this.y0*tCols + this.x1,
             this.y1*tCols + this.x1,
@@ -110,24 +150,28 @@ Box.prototype.getAdjacentBoxes = function(tCols, index) {
     let diffY = this.y1-this.y0;
 
     if(index === 0)
+        //Top-Left
         return [
-            new Box(this.x0, Math.max(this.y0-diffY*2, 0), this.x1+diffX, this.y0),
-            new Box(Math.max(this.x0-diffX*2, 0), this.y0, this.x0, this.y1+diffY)
+            new Box(Math.max(this.x0-diffX*2, 0), this.y0, this.x0, Math.min(this.y1+diffY, tCols-1)),
+            new Box(this.x0, Math.max(this.y0-diffY*2, 0), Math.min(this.x1+diffX, tCols-1), this.y0)
         ];
     else if(index === 1)
-        return [
-            new Box(Math.max(this.x0-diffX*2, 0), Math.min(this.y0-diffY, 0), this.x0, this.y1),
-            new Box(this.x0, this.y1, Math.min(this.x1+diffX, tCols-1), Math.min(this.y1+diffY*2, tCols-1))
-        ];
-    else if(index === 2)
+        //Top-Right
         return [
             new Box(Math.max(this.x0-diffX, 0), Math.max(this.y0-diffY*2, 0), this.x1, this.y0),
             new Box(this.x1, this.y0, Math.min(this.x1+diffX*2, tCols-1), Math.min(this.y1+diffY, tCols-1))
         ];
-    else {
+    else if(index === 2)
+        //Bottom-Right
         return [
-            new Box(Math.max(this.x0-diffX, 0), this.y1, this.x1, Math.min(this.y1+diffY*2, tCols)),
-            new Box(this.x1, Math.max(this.y0-diffY, 0), Math.min(this.x1+diffX*2, tCols), this.y1)
+            new Box(this.x1, Math.max(this.y0-diffY, 0), Math.min(this.x1+diffX*2, tCols-1), this.y1),
+            new Box(Math.max(this.x0-diffX, 0), this.y1, this.x1, Math.min(this.y1+diffY*2, tCols-1))
+        ];
+    else if(index === 3) {
+        //Bottom-Left
+        return [
+            new Box(this.x0, this.y1, Math.min(this.x1+diffX, tCols-1), Math.min(this.y1+diffY*2, tCols-1)),
+            new Box(Math.max(this.x0-diffX*2, 0), Math.max(this.y0-diffY, 0), this.x0, this.y1)
         ];
     }
 };
@@ -170,6 +214,7 @@ QuadTree.prototype.getSphereVertices = function(node, coord) {
 function QuadTree(mesh) {
     this.tree = [];
     this.data = [];
+    this.stack = [];
 
     this.mesh = mesh;
     this.cols = Math.sqrt(this.mesh.length);
@@ -189,8 +234,9 @@ function QuadTree(mesh) {
  * @param currentNode
  * @param depth
  * @param currentBox
+ * @param currentIndex
  */
-QuadTree.prototype.fillTree = function(currentNode, depth, currentBox, index) {
+QuadTree.prototype.fillTree = function(currentNode, depth, currentBox, currentIndex) {
     if(depth === 0 || !currentBox.checkPartition())
         return;
 
@@ -203,11 +249,11 @@ QuadTree.prototype.fillTree = function(currentNode, depth, currentBox, index) {
 
     currentNode.push(node);
 
-    currentBox.getVerticesCoord(this.cols).forEach((coord) => {
+    currentBox.getVerticesCoord(this.cols, currentIndex).forEach((coord) => {
         this.getPlaneVertices(node.vertices, coord);
     });
 
-    currentBox.getLinesCoord(this.cols, index).forEach((coord) => {
+    currentBox.getLinesCoord(this.cols, currentIndex).forEach((coord) => {
         this.getPlaneVertices(node.lines, coord);
     });
 
@@ -261,7 +307,7 @@ QuadTree.prototype.readLevel = function(depth, currentNode) {
  * @returns {{withinFrustum: boolean, distanceRange: number}}
  */
 QuadTree.prototype.checkFrustumBoundaries = function(vertices, projection, viewCamera) {
-    let distance = -10;
+    let distance = -15;
     let withinFrustum = false;
 
     for(let g = 0; g < vertices.length; g += 3) {
@@ -281,32 +327,38 @@ QuadTree.prototype.checkFrustumBoundaries = function(vertices, projection, viewC
 
         distance = Math.max(distance, -distanceVecs([0, 0, 0], [viewVector[0], viewVector[1], viewVector[2]]));
 
-        if(v[0] >= -1.0 && v[0] <= 1.0 &&
-            v[1] >= -1.0 && v[1] <= 1.0 &&
-            v[2] >= -1.0 && v[2] <= 1.0)
+        if(-1.0 <= v[0] && v[0] <= 1.0 &&
+            -1.0 <= v[1] && v[1] <= 1.0)
             withinFrustum = true;
     }
 
     return {
         "withinFrustum" : withinFrustum,
-        "minZ" : Math.max(Math.abs(distance), 0.01)/10
+        "minDistance" : Math.max(Math.abs(distance), 0.01)/15
     };
 };
 
 QuadTree.prototype.readProjection = function(projection, viewCamera, currentNode = this.tree[0].children) {
     this.data.length = 0;
+
     for(let g = 0; g < 4; g++)
-        this.readComplexity(projection, viewCamera, currentNode[g], g);
+        this.readComplexity(projection, viewCamera, currentNode[g], 1);
 
     return this.data;
 };
 
-QuadTree.prototype.testNeighbours = function(adjacentBoxes, projection, viewCamera, depth) {
-    return adjacentBoxes
-        .filter((neighbour) => neighbour.checkBoundary(this.cols))
-        .some((neighbour) => {
+QuadTree.prototype.getNeighbours = function(adjacentBoxes, projection, viewCamera, depth) {
+    let adjacentLODsHigher = adjacentBoxes.map((adjacentBox, index) => ({
+        "adjacentBox" : adjacentBox,
+        "index" : index
+    }));
+
+    return adjacentLODsHigher
+        .filter((neighbour) => neighbour.adjacentBox.checkBoundary(this.cols))
+        .filter((neighbour) => {
             let vertices = [];
-            neighbour.getVerticesCoord(this.cols).forEach((coord) => {
+            //Index 0 because we don't care about the triangle's vertices order
+            neighbour.adjacentBox.getVerticesCoord(this.cols, 0).forEach((coord) => {
                 for(let g = 0; g < 3; g++) {
                     vertices.push(this.mesh[coord][g]);
                 }
@@ -314,8 +366,7 @@ QuadTree.prototype.testNeighbours = function(adjacentBoxes, projection, viewCame
 
             let frustumBoundaries = this.checkFrustumBoundaries(vertices, projection, viewCamera);
             if(frustumBoundaries.withinFrustum) {
-
-                let neighbourDepth = this.depth-Math.ceil(frustumBoundaries.minZ/this.section);
+                let neighbourDepth = this.depth-Math.ceil(frustumBoundaries.minDistance/this.section);
 
                 return neighbourDepth < depth;
             }
@@ -326,28 +377,44 @@ QuadTree.prototype.fetchLines = function(projection, viewCamera, currentNode, de
     let box = currentNode.box;
     let adjacentBoxes = box.getAdjacentBoxes(this.cols, index);
 
-    if(!this.testNeighbours(adjacentBoxes, projection, viewCamera, depth))
-        currentNode.lines.forEach((val) => {
+    let adjacentLODsHigher = this.getNeighbours(adjacentBoxes, projection, viewCamera, depth);
+
+    // if(adjacentLODsHigher.length === 0)
+        currentNode.vertices.forEach((val) => {
             this.data.push(val);
         });
 };
 
-QuadTree.prototype.readComplexity = function(projection, viewCamera, currentNode, index, currentDepth = 1) {
-    let frustumBoundaries = this.checkFrustumBoundaries(currentNode.vertices, projection, viewCamera);
+QuadTree.prototype.readComplexity = function(projection, viewCamera, currentNode, currentIndex, currentDepth = 1) {
+    let childrenToBeRendered = [];
+    let minDepth = this.depth;
 
-    if(frustumBoundaries.withinFrustum) {
-        let depth = this.depth-Math.ceil(frustumBoundaries.minZ/this.section);
+    currentNode.children.forEach((child, index) => {
+        let frustumBoundaries = this.checkFrustumBoundaries(child.vertices, projection, viewCamera);
 
-        if(depth <= currentDepth) {
-            //Even complexity, or the others quarters inherits the parent previous complexity
-            this.fetchLines(projection, viewCamera, currentNode, currentDepth, index);
-        } else if(depth > currentDepth) {
-            //Needs more complexity
-            currentNode.children.forEach((child, index) => {
-                this.readComplexity(projection, viewCamera, child, index, currentDepth+1);
+        if(frustumBoundaries.withinFrustum) {
+            //Section is the 1.0/this.depth
+            let depth = this.depth-Math.ceil(frustumBoundaries.minDistance/this.section);
+
+            minDepth = Math.min(minDepth, depth);
+
+            childrenToBeRendered.push({
+                "child" : child,
+                "index" : index,
+                "depth" : depth
             });
         }
-    }
+    });
+
+    childrenToBeRendered.forEach((child => {
+        if(minDepth <= currentDepth) {
+            //Even complexity, or the others quarters inherits the parent complexity
+            this.fetchLines(projection, viewCamera, child.child, currentDepth, child.index);
+        } else if(minDepth > currentDepth) {
+            //Needs more complexity because it's too near to camera origins
+            this.readComplexity(projection, viewCamera, child.child, child.index, currentDepth+1);
+        }
+    }));
 };
 
 /**

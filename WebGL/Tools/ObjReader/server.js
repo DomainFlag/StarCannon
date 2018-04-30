@@ -11,9 +11,9 @@ http.createServer(function(request, response) {
         });
         response.end();
     } else
-        if(!router.resolve(request, response)) {
-            server(request, response);
-        }
+    if(!router.resolve(request, response)) {
+        server(request, response);
+    }
 }).listen(8000);
 
 function JSONresponse(response, data) {
