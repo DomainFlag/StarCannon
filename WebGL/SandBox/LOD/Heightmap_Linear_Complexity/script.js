@@ -19,9 +19,9 @@ let sliders = [
         measurement : "dp"
     }, {
         label : "cameraY",
-        valueStart : 10,
-        valueEnd : 0,
-        value : 0,
+        valueStart : -10,
+        valueEnd : 10,
+        value : 3.9,
         measurement : "dp"
     }, {
         label : "cameraZ",
@@ -33,7 +33,7 @@ let sliders = [
         label : "cameraRotX",
         valueStart : 0,
         valueEnd : 2*Math.PI,
-        value : Math.PI/2,
+        value : Math.PI/2.0,
         measurement : "°"
     }, {
         label : "cameraRotY",
@@ -50,7 +50,7 @@ let sliders = [
     }
 ];
 
-setSliders(sliders, drawScene, true, gl);
+setSliders(sliders, drawScene, false, gl);
 
 let vertexShaderSource = `
     attribute vec4 a_position;
@@ -58,18 +58,20 @@ let vertexShaderSource = `
     uniform mat4 u_projection;
     uniform mat4 u_camera;
     
+    uniform sampler2D u_texture;
+    
     varying float v_depth;
-    varying vec2 v_tex;
     varying float v_far;
     
     void main() {
-        vec4 projectionView = u_projection*u_camera*a_position;
+        vec4 position = vec4(a_position.xyz, 1.0);
         
+        vec4 projectionView = u_projection*u_camera*position;
+ 
         gl_Position = projectionView;
         
-        v_depth = a_position.y+0.5;
-        v_tex = vec2(((a_position.x+a_position.z)/4.0+0.5)*5.0, 1.0-v_depth);
-        v_far = 10.0-log(distance(gl_Position.xyz, vec3(0, 0, 1.0)));
+        v_depth = position.y+0.5;
+        v_far = 5.0-log(distance(gl_Position.xyz, vec3(0, 0, 0)));
     }
 `;
 
@@ -78,21 +80,15 @@ let fragmentShaderSource = `
     
     uniform sampler2D u_texture;
     
-    varying vec2 v_tex;
     varying float v_depth;
     varying float v_far;
     
     void main() {
-        if(v_depth >= 0.05) {
-            gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
-            gl_FragColor = texture2D(u_texture, v_tex);
+        gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
 
-            gl_FragColor.rgb *= v_depth;
+        gl_FragColor.rgb *= v_depth;
 
-            gl_FragColor.w = v_far;
-        } else {
-            gl_FragColor = vec4(0.147, 0.372, 0.592, 1.0);
-        }
+        gl_FragColor.w = v_far;
     }
 `;
 
@@ -140,7 +136,7 @@ Animation.prototype.act = function(currentTime) {
 };
 
 Animation.prototype.update = function() {
-    sliders[2].value = this.value;
+    sliders[3].value = this.value;
 };
 
 Animation.prototype.addEventListener = function() {
@@ -152,7 +148,9 @@ Animation.prototype.addEventListener = function() {
 };
 
 function drawScene(currentTime) {
-    animation.act(currentTime);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    // animation.act(currentTime);
+    update_frame(currentTime);
 
     let cameraTranslation = matrices["translation"](sliders[1].value, sliders[2].value, sliders[3].value);
     let cameraRotX = matrices["rotationX"](sliders[4].value);
@@ -165,6 +163,7 @@ function drawScene(currentTime) {
     let perspective = matrices["perspective"](Math.PI/3, gl.canvas.width/gl.canvas.height, 0.01, 25);
 
     let data = lod.tree.readProjection(perspective, cameraMatrix);
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.DYNAMIC_DRAW);
     gl.vertexAttribPointer(attribPositionLoc, 3, gl.FLOAT, false, 0, 0);
 
@@ -176,8 +175,9 @@ function drawScene(currentTime) {
     requestAnimationFrame(drawScene);
 }
 
-let uniformProjectionLocation, uniformCameraLocation;
+let uniformProjectionLocation, uniformCameraLocation, unifMorphRange;
 let attribPositionLoc;
+let positionBuffer;
 
 function resize(gl) {
     let realToCSSPixels = window.devicePixelRatio;
@@ -195,15 +195,15 @@ function resize(gl) {
 
 let lod;
 let animation;
+let update_frame = get_frame_rate_updater();
 
 let img = document.createElement("img");
 img.crossOrigin = "null";
-img.src = "http://localhost:8000/texture?filename=terrain_gradient.png";
+img.src = "http://localhost:8000/texture?filename=heightmap.jpg";
 img.addEventListener("load", () => {
     lod = new LOD(startWebGL, gl);
-    animation = new Animation(drawScene, sliders[3].valueEnd, sliders[3].valueStart, 1/30);
+    // animation = new Animation(drawScene, sliders[3].valueEnd, sliders[3].valueStart, 1/30);
 });
-
 
 function startWebGL(gl) {
     resize(gl);
@@ -220,21 +220,20 @@ function startWebGL(gl) {
 
     let texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
 
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
-    gl.clearColor(0, 0, 0, 0);
+    gl.clearColor(0, 0, 0, 1);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-    let positionBuffer = gl.createBuffer();
+    positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.enableVertexAttribArray(attribPositionLoc);
 
-    // drawScene();
     requestAnimationFrame(drawScene);
 }

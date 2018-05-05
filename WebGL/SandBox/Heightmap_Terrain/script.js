@@ -70,20 +70,26 @@ function drawScene(gl) {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     if(gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
-        let min = Math.min(gl.canvas.width, gl.canvas.height);
-        let pixels = new Uint8Array(min*min*4);
-        gl.readPixels(0, 0, min, min, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        let pixels = new Uint8Array(gl.canvas.width*gl.canvas.height*4);
+        gl.readPixels(0, 0, gl.canvas.width, gl.canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
         let data = pixels.filter((val, ind) => (ind % 4) === 0);
 
-        let info = [];
+        let info = {
+            "dim" : {
+                "width" : gl.canvas.width,
+                "height" : gl.canvas.height
+            },
+            "vertices" : []
+        };
 
-        let offset = 10.0/min;
-        for(let g = 0; g < min; g++) {
-            for (let h = 0; h < min; h++) {
+        let offsetX = 10.0/gl.canvas.width;
+        let offsetY = 10.0/gl.canvas.height;
+        for(let g = 0; g < gl.canvas.height; g++) {
+            for (let h = 0; h < gl.canvas.width; h++) {
                 let vec = [];
-                vec.push(offset * h - 5.0, data[h * min + g] / 255 - 0.5, offset * g - 5.0);
-                info.push(vec);
+                vec.push(offsetX * h - 5.0, data[g * gl.canvas.width + h] / 255 - 0.5, offsetY * g - 5.0);
+                info.vertices.push(vec);
             }
         }
 
