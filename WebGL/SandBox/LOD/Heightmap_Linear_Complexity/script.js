@@ -6,34 +6,28 @@ gl.canvas.height = canvas.getBoundingClientRect().height;
 
 let sliders = [
     {
-        label : "Complexity Level",
-        valueStart : 0,
-        valueEnd : 12,
-        value : 7,
-        measurement : "dg"
-    }, {
         label : "cameraX",
-        valueStart : -10,
-        valueEnd : 10,
+        valueStart : -15,
+        valueEnd : 15,
         value : 0,
         measurement : "dp"
     }, {
         label : "cameraY",
-        valueStart : -10,
-        valueEnd : 10,
-        value : 3.9,
+        valueStart : -15,
+        valueEnd : 15,
+        value : 0.5,
         measurement : "dp"
     }, {
         label : "cameraZ",
-        valueStart : -10,
-        valueEnd : 10,
+        valueStart : -15,
+        valueEnd : 15,
         value : 0,
         measurement : "dp"
     }, {
         label : "cameraRotX",
         valueStart : 0,
         valueEnd : 2*Math.PI,
-        value : Math.PI/2.0,
+        value : 0,
         measurement : "°"
     }, {
         label : "cameraRotY",
@@ -58,8 +52,6 @@ let vertexShaderSource = `
     uniform mat4 u_projection;
     uniform mat4 u_camera;
     
-    uniform sampler2D u_texture;
-    
     varying float v_depth;
     varying float v_far;
     
@@ -77,8 +69,6 @@ let vertexShaderSource = `
 
 let fragmentShaderSource = `
     precision mediump float;
-    
-    uniform sampler2D u_texture;
     
     varying float v_depth;
     varying float v_far;
@@ -136,7 +126,7 @@ Animation.prototype.act = function(currentTime) {
 };
 
 Animation.prototype.update = function() {
-    sliders[3].value = this.value;
+    sliders[2].value = this.value;
 };
 
 Animation.prototype.addEventListener = function() {
@@ -149,20 +139,20 @@ Animation.prototype.addEventListener = function() {
 
 function drawScene(currentTime) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    // animation.act(currentTime);
+    animation.act(currentTime);
     update_frame(currentTime);
 
-    let cameraTranslation = matrices["translation"](sliders[1].value, sliders[2].value, sliders[3].value);
-    let cameraRotX = matrices["rotationX"](sliders[4].value);
-    let cameraRotY = matrices["rotationY"](sliders[5].value);
-    let cameraRotZ = matrices["rotationZ"](sliders[6].value);
+    let cameraTranslation = matrices["translation"](sliders[0].value, sliders[1].value, sliders[2].value);
+    let cameraRotX = matrices["rotationX"](sliders[3].value);
+    let cameraRotY = matrices["rotationY"](sliders[4].value);
+    let cameraRotZ = matrices["rotationZ"](sliders[5].value);
 
     let viewMatrix = multiplyMatrices(cameraRotX, cameraRotY, cameraRotZ, cameraTranslation);
     let cameraMatrix = inverseMatrix(viewMatrix);
 
     let perspective = matrices["perspective"](Math.PI/3, gl.canvas.width/gl.canvas.height, 0.01, 25);
 
-    let data = lod.tree.readProjection(perspective, cameraMatrix);
+    let data = lod.readProjection(perspective, cameraMatrix);
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.DYNAMIC_DRAW);
     gl.vertexAttribPointer(attribPositionLoc, 3, gl.FLOAT, false, 0, 0);
@@ -175,7 +165,7 @@ function drawScene(currentTime) {
     requestAnimationFrame(drawScene);
 }
 
-let uniformProjectionLocation, uniformCameraLocation, unifMorphRange;
+let uniformProjectionLocation, uniformCameraLocation;
 let attribPositionLoc;
 let positionBuffer;
 
@@ -197,13 +187,8 @@ let lod;
 let animation;
 let update_frame = get_frame_rate_updater();
 
-let img = document.createElement("img");
-img.crossOrigin = "null";
-img.src = "http://localhost:8000/texture?filename=heightmap.jpg";
-img.addEventListener("load", () => {
-    lod = new LOD(startWebGL, gl);
-    // animation = new Animation(drawScene, sliders[3].valueEnd, sliders[3].valueStart, 1/30);
-});
+lod = new LOD(startWebGL, gl);
+animation = new Animation(drawScene, sliders[2].value, sliders[2].valueStart, 1/15);
 
 function startWebGL(gl) {
     resize(gl);
@@ -218,17 +203,9 @@ function startWebGL(gl) {
     attribPositionLoc = gl.getAttribLocation(program, "a_position");
     uniformCameraLocation = gl.getUniformLocation(program, "u_camera");
 
-    let texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
-    gl.clearColor(0, 0, 0, 1);
+    gl.clearColor(0, 0, 0, 0);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     positionBuffer = gl.createBuffer();
