@@ -143,6 +143,8 @@ int main(int argc, char ** argv) {
 
     sky.freeProgram();
 
+    audio.freeAudio();
+
 	glfwTerminate();
 	return 0;
 }

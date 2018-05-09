@@ -11,25 +11,30 @@ Check the github url: https://github.com/DomainFlag/StarCannon and pull the late
 The necessary libraries are GL, GLFW, SOIL, GLEW,  each should be included in the /usr/include folder, each game engine component is
 executed within its folder with make command. Currently only on Linux machines it can be executed, latter cmake will be used to make it cross-platform on different OS like Windows.
 
-Installing the SOIL library:
-	sudo apt-get install libsoil-dev
+### Installing the SOIL library:
 
-Installing the freetype library:
-	1. [Freetype releases](https://download.savannah.gnu.org/releases/freetype/)
-	2. Get latest release, for now is the "freetype-2.9.tar.gz"
-	3. Extract the archive: "tar xf 'archive name'""
-	4. Preparing to build the application and move the application files when building it at the /usr/local location: ./configure --prefix=/usr/local
-	5. Build the source code: make
-	6. Move all the needed for the application files to the appropriate system directories /usr/local: sudo make install
+sudo apt-get install libsoil-dev
 
-Installing GLFW library:
-	1. sudo apt-get install libglfw3-dev libglfw3
+### Installing the freetype library:
 
-Installing OpenGL utilities:
-	1. sudo apt-get install mesa-utils
+1. [Freetype releases](https://download.savannah.gnu.org/releases/freetype/)
+2. Get latest release, for now is the "freetype-2.9.tar.gz"
+3. Extract the archive: "tar xf 'archive name'""
+4. Preparing to build the application and move the application files when building it at the /usr/local location: ./configure --prefix=/usr/local
+5. Build the source code: make
+6. Move all the needed for the application files to the appropriate system directories /usr/local: sudo make install
 
-Installing GLEW library:
-	1. sudo apt-get install libglew-dev
+### Installing GLFW library:
+
+sudo apt-get install libglfw3-dev libglfw3
+
+### Installing OpenGL utilities:
+
+sudo apt-get install mesa-utils
+
+### Installing GLEW library:
+
+sudo apt-get install libglew-dev
 
 ## Structure
 
