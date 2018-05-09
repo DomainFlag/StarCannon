@@ -112,83 +112,93 @@ void Thruster::act() {
     }
 };
 
+void Thruster::keyboardListener(GLFWwindow * window, int key, int action, int u, int i) {
+    if(GLFW_KEY_W == key) {
+        this->speed += this->stepSpeed;
+        this->errorX = this->lerp();
+    } else if(GLFW_KEY_S == key) {
+        this->speed -= this->stepSpeed;
+        this->errorX = this->lerp();
+    }
+};
+
 void Thruster::setParameters() {
-   glDisable(GL_DEPTH_TEST);
-   glEnable(GL_PROGRAM_POINT_SIZE);
-   glEnable(GL_BLEND);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 };
 
 void Thruster::setVariablesLocation() {
-   glUseProgram(this->program);
+    glUseProgram(this->program);
 
-   this->attribPosLoc = glGetAttribLocation(this->program, "a_position");
-   this->attribTranslLoc = glGetAttribLocation(this->program, "a_translation");
+    this->attribPosLoc = glGetAttribLocation(this->program, "a_position");
+    this->attribTranslLoc = glGetAttribLocation(this->program, "a_translation");
 
-   this->unifModelViewLoc = glGetUniformLocation(this->program, "u_model");
-   this->unifCameraLoc = glGetUniformLocation(this->program, "u_camera");
-   this->uniProjectionLoc = glGetUniformLocation(this->program, "u_projection");
+    this->unifModelViewLoc = glGetUniformLocation(this->program, "u_model");
+    this->unifCameraLoc = glGetUniformLocation(this->program, "u_camera");
+    this->uniProjectionLoc = glGetUniformLocation(this->program, "u_projection");
 
-   this->unifColorLoc = glGetUniformLocation(this->program, "u_color");
-   this->unifTailLoc = glGetUniformLocation(this->program, "u_tail");
-   this->unifScalarTailNormalizerLoc = glGetUniformLocation(this->program, "u_scalarTailNormalizer");
+    this->unifColorLoc = glGetUniformLocation(this->program, "u_color");
+    this->unifTailLoc = glGetUniformLocation(this->program, "u_tail");
+    this->unifScalarTailNormalizerLoc = glGetUniformLocation(this->program, "u_scalarTailNormalizer");
 };
 
 void Thruster::setVariablesData() {
-   this->projection.perspective(M_PI/3.0f, this->mode->width/this->mode->height, 0.001, 10);
+    this->projection.perspective(M_PI/3.0f, this->mode->width/this->mode->height, 0.001, 10);
 
-   glEnableVertexAttribArray(this->attribPosLoc);
-   glGenBuffers(1, &this->posBuffer);
+    glEnableVertexAttribArray(this->attribPosLoc);
+    glGenBuffers(1, &this->posBuffer);
 
-   glEnableVertexAttribArray(this->attribTranslLoc);
-   glGenBuffers(1, &this->translBuffer);
+    glEnableVertexAttribArray(this->attribTranslLoc);
+    glGenBuffers(1, &this->translBuffer);
 };
 
 void Thruster::renderProgram() {
-	glUseProgram(this->program);
-	this->setParameters();
+    glUseProgram(this->program);
+    this->setParameters();
 
-	vector<float> quat = fromEuler(
-		this->rotation[0], 
-		this->rotation[1], 
-		this->rotation[2]);
+    vector<float> quat = fromEuler(
+    	this->rotation[0], 
+    	this->rotation[1], 
+    	this->rotation[2]);
 
-	this->modelView.fromQuat(quat);
+    this->modelView.fromQuat(quat);
 
-	this->translation.translation(
-		this->transl[0]+this->position[0],
-		this->transl[1]+this->position[1],
-		this->transl[2]+this->position[2]);
+    this->translation.translation(
+    	this->transl[0]+this->position[0],
+    	this->transl[1]+this->position[1],
+    	this->transl[2]+this->position[2]);
 
-	this->viewMatrix = this->modelView*this->translation;
+    this->viewMatrix = this->modelView*this->translation;
 
-	vector<float> objPosition{
-		this->viewMatrix.matrix[12], 
-		this->viewMatrix.matrix[13], 
-		this->viewMatrix.matrix[14]
-	};
+    vector<float> objPosition{
+    	this->viewMatrix.matrix[12], 
+    	this->viewMatrix.matrix[13], 
+    	this->viewMatrix.matrix[14]
+    };
 
-	this->lookAt.lookAt(vector<float>{objPosition[0], objPosition[1]+0.5f, objPosition[2]-0.5f}, this->transl, vector<float>{0, 1.0, 0});
+    this->lookAt.lookAt(vector<float>{objPosition[0], objPosition[1]+0.5f, objPosition[2]-0.5f}, this->transl, vector<float>{0, 1.0, 0});
 
-	glBindBuffer(GL_ARRAY_BUFFER, this->posBuffer);
-	glBufferData(GL_ARRAY_BUFFER, this->particles.size()*sizeof(GL_FLOAT), this->particles.data(), GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(this->attribPosLoc, 4, GL_FLOAT, GL_FALSE, 4*sizeof(GL_FLOAT), NULL);
+    glBindBuffer(GL_ARRAY_BUFFER, this->posBuffer);
+    glBufferData(GL_ARRAY_BUFFER, this->particles.size()*sizeof(GL_FLOAT), this->particles.data(), GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(this->attribPosLoc, 4, GL_FLOAT, GL_FALSE, 4*sizeof(GL_FLOAT), NULL);
 
-	glBindBuffer(GL_ARRAY_BUFFER, this->translBuffer);
-	glBufferData(GL_ARRAY_BUFFER, this->particles.size()*sizeof(GL_FLOAT), this->translations.data(), GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(this->attribTranslLoc, 3, GL_FLOAT, GL_FALSE, 4*sizeof(GL_FLOAT), NULL);
+    glBindBuffer(GL_ARRAY_BUFFER, this->translBuffer);
+    glBufferData(GL_ARRAY_BUFFER, this->particles.size()*sizeof(GL_FLOAT), this->translations.data(), GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(this->attribTranslLoc, 3, GL_FLOAT, GL_FALSE, 4*sizeof(GL_FLOAT), NULL);
 
-	glUniformMatrix4fv(this->unifModelViewLoc, 1, GL_FALSE, this->modelView.matrix.data());
-	glUniformMatrix4fv(this->unifCameraLoc, 1, GL_FALSE, this->lookAt.matrix.data());
-	glUniformMatrix4fv(this->uniProjectionLoc, 1, GL_FALSE, this->projection.matrix.data());
+    glUniformMatrix4fv(this->unifModelViewLoc, 1, GL_FALSE, this->modelView.matrix.data());
+    glUniformMatrix4fv(this->unifCameraLoc, 1, GL_FALSE, this->lookAt.matrix.data());
+    glUniformMatrix4fv(this->uniProjectionLoc, 1, GL_FALSE, this->projection.matrix.data());
 
-	glUniform3fv(this->unifColorLoc, 1, this->color.data());
-	glUniform1f(this->unifTailLoc, this->tail);
-	glUniform1f(this->unifScalarTailNormalizerLoc, 1/exp(-2.0f*this->tail));
+    glUniform3fv(this->unifColorLoc, 1, this->color.data());
+    glUniform1f(this->unifTailLoc, this->tail);
+    glUniform1f(this->unifScalarTailNormalizerLoc, 1/exp(-2.0f*this->tail));
 
-	glDrawArrays(GL_POINTS, 0, this->nbParticles);
+    glDrawArrays(GL_POINTS, 0, this->nbParticles);
 
-	this->act();
+    this->act();
 };
 
 void Thruster::freeProgram() {};

@@ -21,16 +21,18 @@ using namespace std;
 
 const GLFWvidmode * mode;
 
+Thruster * thruster_p;
 Terrain * terrain_p;
 Blaster * blaster_p;
 Audio * audio_p;
 
-string song = "start_sound_3";
+string song = "start_sound_1";
 string flight = "start_sound_2";
 string shot = "start_sound_0";
 
 void input(GLFWwindow * window, int key, int action, int u, int i) {
 	terrain_p->keyboardListener(window, key, action, u, i);
+    thruster_p->keyboardListener(window, key, action, u, i);
 	// skyP->keyboardListener(window, key, action, u, i);
 
 	// audioP->keyboardListener(window, key, action, u, i);
@@ -97,10 +99,11 @@ int main(int argc, char ** argv) {
     Sky sky(mode);
 	Audio audio;
 
-	// audio.changeAudio(song);
-	// audio.changeAudio(flight);
+	audio.changeAudio(song);
+	audio.changeAudio(flight);
 
     terrain_p = &terrain;
+    thruster_p = &thruster;
 	blaster_p = &blaster;
 	audio_p = &audio;
 
@@ -114,6 +117,10 @@ int main(int argc, char ** argv) {
 	while(!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        sky.renderProgram(sun.viewMatrix.multiplyVector(sun.position), -sun.rotX, 0);
+
+        sun.renderProgram();
+
 		terrain.renderProgram();
 
 		blaster.renderShots();
@@ -121,10 +128,6 @@ int main(int argc, char ** argv) {
 		x_fighter.renderProgram();
 
 		thruster.renderProgram();
-
-        sun.renderProgram();
-
-        sky.renderProgram(sun.viewMatrix.multiplyVector(sun.position), -sun.rotX, 0);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

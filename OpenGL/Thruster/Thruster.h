@@ -134,6 +134,8 @@ public:
 
    void act();
 
+   void keyboardListener(GLFWwindow * window, int key, int action, int u, int i);
+
    void setParameters();
 
    void setVariablesLocation();

@@ -2,16 +2,18 @@ GCC 		 = g++
 CPPFLAGS     = -g -std=c++11
 LIBS         = -lGL -lGLEW -lglfw
 
-TARGET  	 = Thruster
+TARGET  	 = thruster
 
 OBJECTS := $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 
-all: $(TARGET)
+.PHOONY: all run clean
 
-$(TARGET): thruster.o Thruster.o Matrix.o Shader.o
+all: clean $(TARGET) run
+
+$(TARGET): $(TARGET).o Thruster.o Matrix.o Shader.o
 	$(GCC) -o $(TARGET) thruster.o Thruster.o Matrix.o Shader.o $(LIBS)
 
-thruster.o: ./thruster.cpp
+$(TARGET).o: ./thruster.cpp
 	$(GCC) $(CPPFLAGS) -c ./thruster.cpp -o thruster.o
 
 Thruster.o: ./Thruster.cpp
@@ -22,6 +24,9 @@ Shader.o: ./../Shader/Shader.cpp
 
 Matrix.o: ./../Tools/Matrix/Matrix.cpp
 	$(GCC) $(CPPFLAGS) -c ./../Tools/Matrix/Matrix.cpp -o Matrix.o
+
+run: ./$(TARGET)
+	./$(TARGET)
 
 clean:
 	-rm -f $(OBJECTS)

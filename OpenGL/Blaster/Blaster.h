@@ -18,7 +18,7 @@ public:
 
     list<Shot> shots;
 
-    vector<float> direction{0, 0, -0.25};
+    vector<float> direction{0, 0, -2.25};
     vector<float> position{0, -0.5, -1.5};
 
     Blaster(const GLFWvidmode * mode);

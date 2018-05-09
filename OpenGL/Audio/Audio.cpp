@@ -10,8 +10,7 @@
 using namespace std;
 
 Audio::Audio() {
-	this->sounds["obstacle1.mp3"] = Sound{0, NULL, 1.0};
-	this->sounds["white_stripes.mp3"] = Sound{0, NULL, 1.0};
+	this->sounds["instrumental.mp3"] = Sound{0, NULL, 1.0};
 	this->sounds["blaster_shot.wav"] = Sound{0, NULL, 0.15};
 	this->sounds["rocket_engine.wav"] = Sound{0, NULL, 0.25};
 
