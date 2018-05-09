@@ -345,12 +345,8 @@ if(gl) {
     gl.uniform3f(uniformMedianColorLoc, 26/360, 36/100, 65/100);
     gl.uniform3f(uniformUpperColorLoc, 0/360, 2/100, 100/100);
 
-
-    // gl.depthRange(-1.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
-    // gl.enable(gl.CULL_FACE);
-    // gl.cullFace(gl.BACK);
     gl.clearColor(0, 0, 0, 0);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 

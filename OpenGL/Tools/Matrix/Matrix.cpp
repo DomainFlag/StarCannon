@@ -82,30 +82,27 @@ void Matrix::perspective(float fieldOfView, float aspect, float near, float far)
 	this->matrix[10] = (near+far)*rangeInv;
 	this->matrix[11] = -1;
 	this->matrix[14] = near*far*rangeInv*2;
+	this->matrix[15] = 0;
 }
 
-Matrix Matrix::lookAt(vector<float> cameraPosition, vector<float> target, vector<float> up) {
-	Matrix result;
-
+void Matrix::lookAt(vector<float> cameraPosition, vector<float> target, vector<float> up) {
     vector<float> zAxis = normalize(substractValues(cameraPosition, target));
     vector<float> xAxis = cross(up, zAxis);
     vector<float> yAxis = cross(zAxis, xAxis);
 
-    result.matrix[0] = xAxis[0];
-    result.matrix[1] = xAxis[1];
-    result.matrix[2] = xAxis[2];
-    result.matrix[4] = yAxis[0];
-    result.matrix[5] = yAxis[1];
-    result.matrix[6] = yAxis[2];
-    result.matrix[8] = zAxis[0];
-    result.matrix[9] = zAxis[1];
-    result.matrix[10] = zAxis[2];
-    result.matrix[12] = zAxis[0];
-    result.matrix[13] = zAxis[1];
-    result.matrix[14] = zAxis[2];
-    result.matrix[15] = 1;
-
-    return result;
+    this->matrix[0] = xAxis[0];
+    this->matrix[1] = xAxis[1];
+    this->matrix[2] = xAxis[2];
+    this->matrix[4] = yAxis[0];
+    this->matrix[5] = yAxis[1];
+    this->matrix[6] = yAxis[2];
+    this->matrix[8] = zAxis[0];
+    this->matrix[9] = zAxis[1];
+    this->matrix[10] = zAxis[2];
+    this->matrix[12] = cameraPosition[0];
+    this->matrix[13] = cameraPosition[1];
+    this->matrix[14] = cameraPosition[2];
+    this->matrix[15] = 1;
 }
 
 Matrix Matrix::operator * (const Matrix mat) {
@@ -118,6 +115,7 @@ Matrix Matrix::operator * (const Matrix mat) {
 			}
 		}
 	}
+	
 	return result;
 }
 
@@ -364,9 +362,12 @@ float dot(vector<float> a, vector<float> b) {
 
 vector<float> normalize(vector<float> v) {
     float length = sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
-    if(length > 0.00001)
+
+    if(length > 0.0001) {
         return vector<float>{v[0]/length, v[1]/length, v[2]/length};
-    else vector<float>{0, 0, 0};
+    } else {
+    	return vector<float>{0, 0, 0};
+    };
 }
 
 float angle(vector<float> a, vector<float> b) {

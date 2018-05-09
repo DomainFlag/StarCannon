@@ -17,10 +17,12 @@ INCLUDE_DIRS = \
 
 LOWLEVEL_LIB = ./../Audio/lib/libfmod.so
 
-all: Starcannon
+.PHONY: all clean run
 
-Starcannon: StarCannon.o Blaster.o Shot.o Thruster.o Audio.o CommonPlatform.o Common.o X-Fighter.o OBJReader.o Matrix.o Shader.o
-	$(GCC) -pthread -o Starcannon Blaster.o Shot.o Thruster.o StarCannon.o Audio.o CommonPlatform.o Common.o X-Fighter.o OBJReader.o Matrix.o Shader.o $(LIBS) -Wl,-rpath=\$$ORIGIN/$(dir ${LOWLEVEL_LIB}) ${LOWLEVEL_LIB} ${INCLUDE_DIRS}
+all: clean $(TARGET) run
+
+$(TARGET): StarCannon.o Terrain.o Sky.o Sun.o Blaster.o Shot.o Thruster.o Audio.o CommonPlatform.o Common.o X-Fighter.o Noise.o ObjReader.o Matrix.o Shader.o
+	$(GCC) -pthread -o $(TARGET) Terrain.o Sky.o Sun.o Blaster.o Shot.o Thruster.o StarCannon.o Audio.o CommonPlatform.o Common.o X-Fighter.o Noise.o ObjReader.o Matrix.o Shader.o $(LIBS) -Wl,-rpath=\$$ORIGIN/$(dir ${LOWLEVEL_LIB}) ${LOWLEVEL_LIB} ${INCLUDE_DIRS}
 
 StarCannon.o: StarCannon.cpp
 	$(GCC) $(CPPFLAGS) -c StarCannon.cpp -o StarCannon.o
@@ -34,11 +36,14 @@ Blaster.o: ./../Blaster/Blaster.cpp
 Shot.o: ./../Shot/Shot.cpp
 	$(GCC) $(CPPFLAGS) -c ./../Shot/Shot.cpp -o Shot.o
 
-# Terrain.o: ./../Terrain/Terrain.cpp
-# 	$(GCC) $(CPPFLAGS) -c ./../Terrain/Terrain.cpp -o Terrain.o
+Terrain.o: ./../Terrain/Terrain.cpp
+	$(GCC) $(CPPFLAGS) -c ./../Terrain/Terrain.cpp -o Terrain.o
 
-# Sky.o: ./../Sky/Sky.cpp
-# 	$(GCC) $(CPPFLAGS) -c ./../Sky/Sky.cpp -o Sky.o
+Sky.o: ./../Sky/Sky.cpp
+	$(GCC) $(CPPFLAGS) -c ./../Sky/Sky.cpp -o Sky.o
+
+Sun.o: ./../Sun/Sun.cpp
+	$(GCC) $(CPPFLAGS) -c ./../Sun/Sun.cpp -o Sun.o
 
 Audio.o: ./../Audio/Audio.cpp
 	$(GCC) $(CPPFLAGS) -c ./../Audio/Audio.cpp -o Audio.o
@@ -55,13 +60,20 @@ X-Fighter.o: ./../X-Fighter/X-Fighter.cpp
 Shader.o: ./../Shader/Shader.cpp
 	$(GCC) $(CPPFLAGS) -c ./../Shader/Shader.cpp -o Shader.o
 
-OBJReader.o: ./../Tools/ObjReader/OBJReader.cpp
-	$(GCC) $(CPPFLAGS) -c ./../Tools/ObjReader/OBJReader.cpp -o OBJReader.o
+Noise.o: ./../Tools/Noise/Noise.cpp
+	$(GCC) $(CPPFLAGS) -c ./../Tools/Noise/Noise.cpp -o Noise.o
+
+ObjReader.o: ./../Tools/ObjReader/ObjReader.cpp
+	$(GCC) $(CPPFLAGS) -c ./../Tools/ObjReader/ObjReader.cpp -o ObjReader.o
 
 Matrix.o: ./../Tools/Matrix/Matrix.cpp
 	$(GCC) $(CPPFLAGS) -c ./../Tools/Matrix/Matrix.cpp -o Matrix.o
+
+run: $(TARGET)
+	./$(TARGET)
 
 clean:
 	-rm -f $(OBJECTS)
 	-rm -f $(TARGET)
 	-rm -f *.o
+	-rm -f ./../*/*.o

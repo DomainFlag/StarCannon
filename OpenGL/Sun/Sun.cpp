@@ -6,8 +6,6 @@
 #include "Sun.h"
 #include "./../Shader/Shader.h"
 #include "./../Tools/Matrix/Matrix.h"
-#include "./../Shader/Shader.cpp"
-#include "./../Tools/Matrix/Matrix.cpp"
 using namespace std;
 
 Sun::Sun(const GLFWvidmode * mode) {
@@ -72,51 +70,6 @@ int Sun::getNbTriangles() {
 //   this->past = now;
 // };
 
-
-// void Sun::cursorListener(GLFWwindow * window, double posX, double posY) {
-//     /**
-//     * Function equation f(x)=1/x will be used to lower the rotation from outer to center of the screen
-//     * Where f(x)=1/x has the domain [1/2, 4] with the image [0.25, 2] and [-4, -1/2] with the image [-2, -0.25]
-//     * Where, the derivative decreases from 1/2 to 4 and increases from -4 to -1/2
-//     */
-//     float x = ((posX-mode->width/2.0f)/(mode->width/2.0f));
-//     float y = ((posY-mode->height/2.0f)/(mode->height/2.0f));
-
-//     if(x < 0.0f) {
-//         x = (x+1.0f)*7.0f/2.0f+1.0f/2.0f;
-//         this->traceYaw = 1.0f/x;
-//     } else {
-//         x = -(x-1.0f)*7.0f/2.0f+1.0f/2.0f;
-//         this->traceYaw = -1.0f/x;
-//     }
-
-//     if(y < 0.0f) {
-//         y = (y+1.0f)*7.0f/2.0f+1.0f/2.0f;
-//         this->tracePitch = 1.0f/y;
-//     } else {
-//         y = -(y-1.0f)*7.0f/2.0f+1.0f/2.0f;
-//         this->tracePitch = -1.0f/y;
-//     }
-// };
-
-// void Sun::keyboardListener(GLFWwindow * window, int key, int scancode, int action, int mods) {
-
-// };
-
-// void Sun::listenContinouslyToCursor() {
-//     this->yaw += this->traceYaw/360.0f*2.0f;
-//     this->pitch += -this->tracePitch/360.0f*2.0f;
-
-//     if(this->yaw < 0)
-//         this->yaw += 2*M_PI;
-
-//     if(this->pitch < 0)
-//         this->pitch += 2*M_PI;
-
-//     this->yaw = fmod(this->yaw, 2*M_PI);
-//     this->pitch = fmod(this->pitch, 2*M_PI);
-// };
-
 void Sun::setParameters() {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -137,7 +90,7 @@ void Sun::setVariablesLocation() {
 void Sun::setVariablesData() {
     glUseProgram(this->program);
 
-    this->projection.perspective(M_PI/3.0f, mode->width/mode->height, 0.0001, 100);
+    this->projection.perspective(M_PI/3.0f, mode->width/mode->height, 0.0001, 10);
 
     glEnableVertexAttribArray(this->attribPosSunLoc);
 
@@ -150,7 +103,7 @@ void Sun::setVariablesData() {
 void Sun::renderProgram() {
     glUseProgram(this->program);
 
-    this->rotX = fmod(this->rotX+0.01, 2*M_PI);
+    this->rotX = fmod(this->rotX+0.002, 2*M_PI);
 
     this->rotationX.rotationX(this->rotX);
     this->rotationY.rotationY(this->rotY);

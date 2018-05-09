@@ -6,6 +6,12 @@
 #include <map>
 using namespace std;
 
+struct Texture {
+	Texture(string name, int texUnit) : name(name), texUnit(texUnit) {}
+	string name;
+	int texUnit;
+};
+
 struct Obj {
 	vector<string> textures;
 	string mtl;
@@ -19,7 +25,7 @@ struct Material {
 };
 
 struct Data {
-	vector<string> textures;
+	vector<Texture> textures;
 	vector<float> geometricVertices;
 	vector<float> textureVertices;
 	vector<float> normalVertices;

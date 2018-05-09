@@ -91,7 +91,7 @@ public:
           hsv.r -= pow(log((u_pitch)/2.0+1.0), 1.0/2.0);
           
           //Luminosity cycle
-          // hsv.b -= (1.0-u_pitch)/3.0;
+          hsv.b -= (1.0-u_pitch)/3.0;
           
           //Radial gradient
           hsv.b += dist;

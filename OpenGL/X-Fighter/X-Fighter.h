@@ -7,7 +7,7 @@
 #include <vector>
 #include <cmath>
 #include "./../Tools/Matrix/Matrix.h"
-#include "./../Tools/ObjReader/OBJReader.h"
+#include "./../Tools/ObjReader/ObjReader.h"
 using namespace std;
 
 
@@ -22,11 +22,11 @@ public:
     GLuint posBuffer, texBuffer;
     GLint attribPosLoc, attribTexLoc, unifCameraLoc, unifProjectionLoc;
 
-    vector<float> position{-12, -12, 0};
-    vector<float> translation{0, 0, 0};
-    vector<float> rotation{0, -M_PI/2.0f, 0};
+    vector<float> position{0, -0.5, 0};
+    vector<float> translation{0, 0, -1.0};
+    vector<float> rotation{0, M_PI/2.0f, 0};
 
-    Matrix projection;
+    Matrix projection, lookAt;
     Matrix modelView, transl, scaling;
 
     vector<GLuint> textures;
@@ -43,8 +43,7 @@ public:
         varying vec3 v_texture;
 
         void main() {
-            vec4 projection = u_projection*u_camera*a_position;
-            gl_Position = projection;
+            gl_Position = u_projection*u_camera*a_position;
             
             v_texture = a_texture;
         }
@@ -53,11 +52,12 @@ public:
     string fragmentShader = R"(
         #version 130
 
-        uniform sampler2D u_texture[5];
+        uniform sampler2D u_texture[8];
         varying vec3 v_texture;
 
         void main() {
             int texUnit = int(v_texture.z);
+
             if(texUnit == 0)
                 gl_FragColor = texture2D(u_texture[0], vec2(1, 1)-v_texture.xy);
             else if(texUnit == 1)
@@ -68,7 +68,13 @@ public:
                 gl_FragColor = texture2D(u_texture[3], vec2(1, 1)-v_texture.xy);
             else if(texUnit == 4)
                 gl_FragColor = texture2D(u_texture[4], vec2(1, 1)-v_texture.xy);
-            else  gl_FragColor = texture2D(u_texture[3], v_texture.xy);
+            else if(texUnit == 5)
+                gl_FragColor = texture2D(u_texture[5], vec2(1, 1)-v_texture.xy);
+            else if(texUnit == 6)
+                gl_FragColor = texture2D(u_texture[6], vec2(1, 1)-v_texture.xy);
+            else if(texUnit == 7)
+                gl_FragColor = texture2D(u_texture[7], vec2(1, 1)-v_texture.xy);
+            else  gl_FragColor = texture2D(u_texture[4], vec2(1, 1)-v_texture.xy);
         } 
     )";
 

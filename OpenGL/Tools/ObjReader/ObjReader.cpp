@@ -5,20 +5,13 @@
 #include <boost/regex.hpp>
 #include <map>
 #include <fstream>
-#include "OBJReader.h"
+#include "ObjReader.h"
 using namespace std;
 
 void readObj(Data & data, string pathname, string objPath, map<string, Material> materials) {
-	vector<float> geometricVertixIndices(429228);
-	int geoIndex = 0;
-	vector<float> textureVertixIndices(306474);
-	int texIndex = 0;
-	vector<float> normalVertixIndices(1667310);
-	int norIndex = 0;
-
-	data.geometricVertices.resize(2501766);
-	data.textureVertices.resize(2501766);
-	data.normalVertices.resize(2501766);
+	vector<float> geometricVertixIndices;
+	vector<float> textureVertixIndices;
+	vector<float> normalVertixIndices;
 
 	ifstream objfile((pathname+objPath).c_str());
 
@@ -26,7 +19,7 @@ void readObj(Data & data, string pathname, string objPath, map<string, Material>
 		string line;
 		smatch matches;
 		string material;
-		int texUnit;
+		int texUnit = 0;
 		bool indexesFlag = true;
 
 		match_results<string::const_iterator> testMatches;
@@ -40,10 +33,9 @@ void readObj(Data & data, string pathname, string objPath, map<string, Material>
 
 		while(indexesFlag && getline(objfile, line)) {
 			if(regex_search(line, matches, geoVertixIndices)) {
-				geometricVertixIndices.at(geoIndex) = stof(matches[1]);
-				geometricVertixIndices.at(geoIndex+1) = stof(matches[2]);
-				geometricVertixIndices.at(geoIndex+2) = stof(matches[3]);
-				geoIndex += 3;
+				geometricVertixIndices.push_back(stof(matches[1]));
+				geometricVertixIndices.push_back(stof(matches[2]));
+				geometricVertixIndices.push_back(stof(matches[3]));
 			} else if(regex_search(line, matches, texVertixIndices)) {
 				indexesFlag = false;
 			}
@@ -53,9 +45,8 @@ void readObj(Data & data, string pathname, string objPath, map<string, Material>
 
 		do {
 			if(regex_search(line, matches, texVertixIndices)) {
-				textureVertixIndices[texIndex] = stof(matches[1]);
-				textureVertixIndices[texIndex+1] = stof(matches[2]);
-				texIndex += 2;
+				textureVertixIndices.push_back(stof(matches[1]));
+				textureVertixIndices.push_back(stof(matches[2]));
 			} else if(regex_search(line, matches, norVertixIndices)) {
 				indexesFlag = false;
 			}
@@ -65,30 +56,26 @@ void readObj(Data & data, string pathname, string objPath, map<string, Material>
 
 		do {
 			if(regex_search(line, matches, norVertixIndices)) {
-				normalVertixIndices[norIndex] = stof(matches[1]);
-				normalVertixIndices[norIndex+1] = stof(matches[2]);
-				normalVertixIndices[norIndex+2] = stof(matches[3]);
-				norIndex += 3;
+				normalVertixIndices.push_back(stof(matches[1]));
+				normalVertixIndices.push_back(stof(matches[2]));
+				normalVertixIndices.push_back(stof(matches[3]));
 			} else if(regex_search(line, matches, materialRegex)) {
 				indexesFlag = false;
 			}
 		} while(indexesFlag && getline(objfile, line));
 
 
-		int index = 0;
 		if(!indexesFlag)
 			do {
 				if(regex_search(line, matches, vertexRegex)) {
 					for(int g = 1; g < 9; g += 3) {
 						for(int h = 0; h < 3; h++) {
-							data.geometricVertices[index+h] = geometricVertixIndices[stoi(matches[g])*3+h];
-							data.normalVertices[index+h] = normalVertixIndices[stoi(matches[g+2])*3+h];
+							data.geometricVertices.push_back(geometricVertixIndices[stoi(matches[g])*3+h]);
+							data.normalVertices.push_back(normalVertixIndices[stoi(matches[g+2])*3+h]);
 						}
 						for(int h = 0; h < 2; h++)
-							data.textureVertices[index+h] = textureVertixIndices[stoi(matches[g+1])*2+h];
-						data.textureVertices[index+2] = texUnit;
-
-						index += 3;
+							data.textureVertices.push_back(textureVertixIndices[stoi(matches[g+1])*2+h]);
+						data.textureVertices.push_back(texUnit);
 					}
 				} else if(regex_search(line, matches, materialRegex)) {
 					material = matches[2];
@@ -99,8 +86,9 @@ void readObj(Data & data, string pathname, string objPath, map<string, Material>
 
 
 	for(map<string, Material>::iterator it = materials.begin(); it != materials.end(); it++)
-		if(it->second.unit != -1)
-			data.textures.push_back(it->second.texture);
+		if(it->second.unit != -1) {
+			data.textures.push_back(Texture(it->second.texture, it->second.unit));
+		}
 }
 
 map<string, Material> readMtl(string pathname, string mtlPath) {

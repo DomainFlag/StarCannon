@@ -15,13 +15,13 @@ public:
 	GLuint program;
 	const GLFWvidmode * mode;
 
-	vector<float> transl{-0.5, 0, 0};
+	vector<float> transl;
 	vector<float> rotat{M_PI*3/2, M_PI*3/2, 0};
-	vector<float> direction{0, 0, -0.25};
-	float tail = 0.5;
+    vector<float> direction;
+	float tail = 0.8;
 	vector<float> color{114, 236, 254};
 	float errorY = 0.005;
-	float amplitude = 0.6;
+	float amplitude = 0.4;
 
 	int nbParticles = 800;
 	float range = 0.8;
@@ -92,15 +92,16 @@ public:
         void main() {
             vec3 hsv = rgb2hsv(u_color);
             hsv.r += v_dispersion;
-            hsv.b -= v_far;
             hsv.b -= v_dispersion;
             vec3 color = hsv2rgb(hsv);
+
+            color.r = 0.8;
             
-            gl_FragColor = vec4(u_color, 1.0-v_far);
+            gl_FragColor = vec4(color, 1.0);
         }
     )";
 
-    Shot(const GLFWvidmode * mode, vector<float> transl, vector<float> rotat);
+    Shot(const GLFWvidmode * mode, vector<float> direction, vector<float> transl, vector<float> rotat);
 
     void initializeShot();
 

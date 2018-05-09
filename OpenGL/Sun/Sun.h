@@ -19,7 +19,7 @@ public:
     float ratio;
     vector<float> mesh;
     float clarity = 64;
-    float radiusX = 0.03;
+    float radiusX = 0.01;
     vector<float> position{0, 0, -1, 0};
 
     float radiusY;

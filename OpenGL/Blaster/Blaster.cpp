@@ -9,11 +9,9 @@
 #include "./../Shot/Shot.h"
 #include "./Blaster.h"
 
-// #include "./../Shot/Shot.cpp"
 using namespace std;
 
 Blaster::Blaster(const GLFWvidmode * mode) {
-    list<Blaster> shots;
     this->mode = mode;
 }
 
@@ -29,6 +27,9 @@ void Blaster::renderShots() {
 };
 
 void Blaster::fireShots() {
-	this->shots.push_back(Shot(this->mode, vector<float>{-0.15, -0.5, -0.8}, vector<float>{M_PI*3/2, M_PI*3/2, 0}));
-	this->shots.push_back(Shot(this->mode, vector<float>{0.15, -0.5, -0.8}, vector<float>{M_PI*3/2, M_PI*3/2, 0}));
+    this->position[0] -= 0.125;
+	this->shots.push_back(Shot(this->mode, this->direction, this->position, vector<float>{M_PI*3/2, M_PI*3/2, 0}));
+    this->position[0] += 0.25;
+	this->shots.push_back(Shot(this->mode, this->direction, this->position, vector<float>{M_PI*3/2, M_PI*3/2, 0}));
+    this->position[0] -= 0.125;
 };

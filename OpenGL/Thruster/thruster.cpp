@@ -17,20 +17,28 @@ void keyboardListener(GLFWwindow * window, int key, int action, int u, int i) {
       thruster_p->errorX = thruster_p->lerp();
    }
 
+   if(GLFW_KEY_E == key) {
+      thruster_p->rotation[2] += 0.02f;
+   } else if(GLFW_KEY_D == key) {
+      thruster_p->rotation[2] -= 0.02f;
+   }
+
+   if(GLFW_KEY_R == key) {
+      thruster_p->rotation[1] += 0.02f;
+   } else if(GLFW_KEY_F == key) {
+      thruster_p->rotation[1] -= 0.02f;
+   }
+
    if(GLFW_KEY_UP == key) {
-      thruster_p->rotationZ += 0.02f;
-      thruster_p->rotZ.rotationX(thruster_p->rotationX);
+      thruster_p->transl[1] += 0.001f;
    } else if(GLFW_KEY_DOWN == key) {
-      thruster_p->rotationZ -= 0.02f;
-      thruster_p->rotZ.rotationX(thruster_p->rotationX);
+      thruster_p->transl[1] -= 0.001f;
    }
 
    if(GLFW_KEY_LEFT == key) {
-      thruster_p->rotationY += 0.02f;
-      thruster_p->rotY.rotationY(thruster_p->rotationY);
+      thruster_p->transl[0] -= 0.001f;
    } else if(GLFW_KEY_RIGHT == key) {
-      thruster_p->rotationY -= 0.02f;
-      thruster_p->rotY.rotationY(thruster_p->rotationY);
+      thruster_p->transl[0] += 0.001f;
    }
 
    if(GLFW_KEY_ESCAPE == key)
@@ -69,7 +77,6 @@ int main() {
    glViewport(0, 0, mode->width, mode->height);
 
    glfwSetKeyCallback(window, keyboardListener);
-   // glfwSetCursorPosCallback(window, cursorListener);
 
    while(!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) ;

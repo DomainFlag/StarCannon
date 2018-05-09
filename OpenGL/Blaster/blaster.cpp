@@ -9,7 +9,6 @@ using namespace std;
 Blaster * blaster_p;
 
 void input(GLFWwindow * window, int key, int action, int u, int i) {
-
 	switch(key) {
 		case GLFW_KEY_ESCAPE : {
 			glfwSetWindowShouldClose(window, true);

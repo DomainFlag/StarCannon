@@ -17,7 +17,7 @@ public:
 
    float maxSpeed = 0.05;
    float minSpeed = 0.01;
-   float stepSpeed = 0.005;
+   float stepSpeed = 0.0005;
    float speed = this->minSpeed;
 
    float tail = 0.6;
@@ -30,24 +30,31 @@ public:
    float range = 0.8;
 
    vector<float> particles;
+   vector<float> translations;
 
-   GLint attribPosLoc, unifModelViewLoc, uniProjectionLoc, unifColorLoc, unifTailLoc, unifScalarTailNormalizerLoc;
+   GLint attribPosLoc, attribTranslLoc;
+   GLint unifModelViewLoc, uniProjectionLoc, unifCameraLoc; 
+   GLint unifColorLoc, unifTailLoc, unifScalarTailNormalizerLoc;
 
-   GLuint posBuffer;
+   GLuint posBuffer, translBuffer;
 
-   float rotationX = 0, rotationY = -M_PI/2.0f, rotationZ = 0;
-   vector<float> transl{0, -0.76, -0.8};
+   vector<float> position{0, -1.175, 0};
+   vector<float> transl{0, 0, -0.5};
+   vector<float> rotation{0, -60, -90};
 
-   Matrix translation;
-   Matrix modelView, projection;
+   Matrix modelView, lookAt, projection;
+   Matrix viewMatrix, translation;
 
    string vertexShader = R"(
       #version 130
 
       attribute vec4 a_position;
+      attribute vec4 a_translation;
       
       uniform mat4 u_model;
+      uniform mat4 u_camera;
       uniform mat4 u_projection;
+
       uniform float u_tail;
       uniform float u_scalarTailNormalizer;
       
@@ -56,9 +63,10 @@ public:
       
       void main() {
           gl_PointSize = 1.5;
+
+          vec4 rotated_pos = u_model*vec4(a_position.xyz, 1.0);
           
-          vec4 pos = u_projection*u_model*vec4(a_position.xyz, 1.0);
-          gl_Position = pos;
+          gl_Position = u_projection*u_camera*(a_translation + rotated_pos);
           
           float len = length(vec3(0, a_position.yz))/a_position.w;
           

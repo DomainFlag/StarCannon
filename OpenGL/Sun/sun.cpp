@@ -12,37 +12,6 @@ const GLFWvidmode * mode;
 
 Sun * sun_p;
 
-void input(GLFWwindow * window, int key, int action, int u, int i) {
-	// switch(key) {
-	// 	case GLFW_KEY_A : {
-	// 	 //... strafing translationX neg with rotationZ pos
-	// 		break;
-	// 	};
-	// 	case GLFW_KEY_W : {
-	// 		if(skyLayer->translationZ < 1.0f)
-	// 			skyLayer->translationZ += 0.05f;
-	// 		skyLayer->translation.translation(0.0f, 0.0f, skyLayer->translationZ);
-	// 		break;
-	// 	};
-	// 	case GLFW_KEY_S : {
-	// 		if(skyLayer->translationZ > -1.0f)
-	// 			skyLayer->translationZ -= 0.05f;
-	// 		skyLayer->translation.translation(0.0f, 0.0f, skyLayer->translationZ);
-	// 		break;
-	// 	};
-	// 	case GLFW_KEY_D : {
-	// 	 //... strafing translationX pos with rotationZ neg
-	// 		break;
-	// 	};
-	// };
-}
-
-void cursor(GLFWwindow * window, double x, double y) {
-	// double variation = 1/50.0;
-	// skyLayer->offsetY = (x-mode->width/2.0)/(mode->width/2.0)*variation;
-	// skyLayer->offsetX = (y-mode->height/2.0)/(mode->height/2.0)*variation;
-}
-
 int main(int argc, char ** argv) {
 	GLFWwindow * window;
 
@@ -70,9 +39,6 @@ int main(int argc, char ** argv) {
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glViewport(0, 0, mode->width, mode->height);
-
-	glfwSetKeyCallback(window, input);
-	glfwSetCursorPosCallback(window, cursor);
 
 	while(!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

@@ -9,7 +9,7 @@ using namespace std;
 
 const GLFWvidmode * mode;
 
-TerrainLayer * terrainLayer;
+Terrain * terrain_p;
 
 void keyboardListener(GLFWwindow * window, int key, int action, int u, int i) {
 	switch(key) {
@@ -18,19 +18,19 @@ void keyboardListener(GLFWwindow * window, int key, int action, int u, int i) {
 			break;
 		};
 		case GLFW_KEY_A : {
-			terrainLayer->roll -= 0.05;
+			terrain_p->roll -= 0.05;
 			break;
 		};
 		case GLFW_KEY_W : {
-			terrainLayer->terrain.speed += terrainLayer->terrain.partition/8.0f;
+			terrain_p->terrain.speed += terrain_p->terrain.partition/8.0f;
 			break;
 		};
 		case GLFW_KEY_S : {
-			terrainLayer->terrain.speed -= terrainLayer->terrain.partition/8.0f;
+			terrain_p->terrain.speed -= terrain_p->terrain.partition/8.0f;
 			break;
 		};
 		case GLFW_KEY_D : {
-			terrainLayer->roll += 0.05;
+			terrain_p->roll += 0.05;
 			break;
 		};
 	};
@@ -47,18 +47,18 @@ void cursorListener(GLFWwindow * window, double posX, double posY) {
 
 	if(x < 0.0f) {
 	    x = (x+1.0f)*7.0f/2.0f+1.0f/2.0f;
-	    terrainLayer->traceYaw = 1.0f/x;
+	    terrain_p->traceYaw = 1.0f/x;
 	} else {
 	    x = -(x-1.0f)*7.0f/2.0f+1.0f/2.0f;
-	    terrainLayer->traceYaw = -1.0f/x;
+	    terrain_p->traceYaw = -1.0f/x;
 	}
 
 	if(y < 0.0f) {
 	    y = (y+1.0f)*7.0f/2.0f+1.0f/2.0f;
-	    terrainLayer->tracePitch = 1.0f/y;
+	    terrain_p->tracePitch = 1.0f/y;
 	} else {
 	    y = -(y-1.0f)*7.0f/2.0f+1.0f/2.0f;
-	    terrainLayer->tracePitch = -1.0f/y;
+	    terrain_p->tracePitch = -1.0f/y;
 	}
 }
 
@@ -84,8 +84,8 @@ int main(int argc, char ** argv) {
 		std::cout << "error..!!" << std::endl;
 	}
 
-	TerrainLayer terrain(mode);
-	terrainLayer = &terrain;
+	Terrain terrain(mode);
+	terrain_p = &terrain;
 
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glViewport(0, 0, mode->width, mode->height);

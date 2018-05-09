@@ -31,7 +31,7 @@ public:
     }
 };
 
-class Terrain {
+class TerrainLayer {
 public:
     Simplex simplex;
 
@@ -42,18 +42,17 @@ public:
 
     float partition = 1.0f/15.0f;
     float speed = this->partition/3.0f;
+    float distance = 5.0f;
 
-    Terrain() {};
+    TerrainLayer() {};
 
     void setHoneycomb() {
         simplex.init();
-        for(float z = -3.0f*sqrt(2.0f)-this->partition; z < 3.0f*sqrt(2.0f)+this->partition; z += this->partition) {
+        for(float z = -distance; z < distance; z += this->partition) {
             vector<Vector> layer;
-            for(float x = -3.0f*sqrt(2.0f)-this->partition; x < 3.0f*sqrt(2.0f)+this->partition; x += this->partition) {
-                float coordX = x;
+            for(float x = -distance; x < distance; x += this->partition) {
                 float coordY = (float) simplex.noise(x, z)/2.5; //[-0.4, 0.4]
-                float coordZ = z;
-                layer.push_back(Vector(coordX, coordY, coordZ));
+                layer.push_back(Vector(x, coordY, z));
             }
             this->honeycomb.push_back(layer);
         }
@@ -88,9 +87,11 @@ public:
     };
 };
 
-class TerrainLayer {
+class Terrain {
 public:
-    Terrain terrain;
+    TerrainLayer terrain;
+
+    float sensitivity = 180;
 
     vector<float> translation = decltype(translation)(3, 0);
     float yaw = 0;
@@ -107,27 +108,31 @@ public:
     unsigned int positionBuffer;
 
     GLint attribPositionLoc;
-    GLint unifCameraLoc, unifViewLoc, unifPerspectiveLoc;
+    GLint unifCameraLoc, unifPerspectiveLoc;
     GLint unifLowerColorLoc, unifMedianColorLoc, unifUpperColorLoc;
 
-    Matrix modelMatrix, cameraMatrix, viewMatrix;
+    Matrix cameraMatrix;
 
     Matrix quaternionMatrix, cameraTranslation, cameraRotX, cameraRotY, cameraRotZ;
-    Matrix objectRotX, objectRotY, objectRotZ;
     Matrix perspective;
 
     string vertexShader = R"(
 		#version 130
+
         attribute vec4 a_position;
-        varying float v_depth;
-        varying float v_far;
-        uniform mat4 u_model;
+
         uniform mat4 u_camera;
         uniform mat4 u_perspective;
+
+        varying float v_depth;
+        varying float v_far;
+
         void main() {
-            vec4 camera = u_camera*u_model*a_position;
+            vec4 camera = u_camera*a_position;
             vec4 result = u_perspective*camera;
+
             gl_Position = result;
+
             v_depth = (a_position.y+1.0/2.5)*5.0/4.0; //->[0, 1]
             v_far = -camera.z; //->[0.0, inf]
         }
@@ -135,9 +140,12 @@ public:
 
     string fragmentShader = R"(
 		#version 130
+
         precision mediump float;
+
         varying float v_depth;
         varying float v_far;
+
         uniform vec3 u_gradients[3];
         
         //RGB to HSV convert
@@ -170,17 +178,18 @@ public:
             }
         }
 
-        //Main
         void main() {
-            vec3 color = hsv2rgb(colorInterpolation());
-            vec4 depth_color = vec4(color.rgb, 1.0); //->[0, 0.2]
-            // vec4 depth_color = vec4(color.rgb, 0.8+v_depth/5.0); //->[0, 0.2]
-            vec4 far_color = vec4(depth_color.rgb, depth_color.a-pow(sqrt(exp(v_far)-1.0), 2.0)/100.0); //->(sqrt(e^x)-1)^2
-            gl_FragColor = far_color;
+        	vec3 color = hsv2rgb(colorInterpolation());
+
+        	vec4 depth_color = vec4(color.rgb, 0.8+v_depth/5.0); //->[0, 0.2]
+
+        	vec4 far_color = vec4(depth_color.rgb, depth_color.a-pow(sqrt(exp(v_far)-1.0), 2.0)/100.0); //->(sqrt(e^x)-1)^2
+
+        	gl_FragColor = far_color;
         }
 	)";
 
-    TerrainLayer(const GLFWvidmode * mode);
+    Terrain(const GLFWvidmode * mode);
 
     void listenContinouslyToCursor();
 

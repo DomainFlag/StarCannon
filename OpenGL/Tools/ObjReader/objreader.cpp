@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iostream>
 #include <vector>
-#include "OBJReader.h"
+#include "ObjReader.h"
 using namespace std;
 
 int main() {

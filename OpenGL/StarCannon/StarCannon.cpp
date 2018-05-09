@@ -6,16 +6,22 @@
 #include <cmath>
 #include <SOIL/SOIL.h>
 #include "./../Shader/Shader.h"
-#include "./../Tools/ObjReader/OBJReader.h"
+#include "./../Tools/ObjReader/ObjReader.h"
 #include "./../Tools/Matrix/Matrix.h"
+#include "./../Tools/Noise/Noise.h"
+
 #include "./../X-Fighter/X-Fighter.h"
 #include "./../Audio/Audio.h"
 #include "./../Thruster/Thruster.h"
 #include "./../Blaster/Blaster.h"
+#include "./../Terrain/Terrain.h"
+#include "./../Sun/Sun.h"
+#include "./../Sky/Sky.h"
 using namespace std;
 
 const GLFWvidmode * mode;
 
+Terrain * terrain_p;
 Blaster * blaster_p;
 Audio * audio_p;
 
@@ -24,7 +30,7 @@ string flight = "start_sound_2";
 string shot = "start_sound_0";
 
 void input(GLFWwindow * window, int key, int action, int u, int i) {
-	// terrainP->keyboardListener(window, key, action, u, i);
+	terrain_p->keyboardListener(window, key, action, u, i);
 	// skyP->keyboardListener(window, key, action, u, i);
 
 	// audioP->keyboardListener(window, key, action, u, i);
@@ -38,8 +44,19 @@ void input(GLFWwindow * window, int key, int action, int u, int i) {
 };
 
 void cursor(GLFWwindow * window, double x, double y) {
-	// terrainP->cursorListener(window, x, y);
-	// skyP->cursorListener(window, x, y);
+    terrain_p->cursorListener(window, x, y);
+
+    // vector<float> quaternionRot = fromEuler(-terrain_p->pitch/M_PI*180.0f, terrain_p->yaw/M_PI*180.0f, 0);
+    // vector<float> result = transformQuat(vector<float>{0.0f, 0.0f, -terrain_p->terrain.speed}, quaternionRot);
+    // blaster_p->position = addValues(blaster_p->position, result);
+
+
+    // float xx = cos(terrain_p->pitch)*cos(terrain_p->yaw);
+    // float yy = sin(terrain_p->pitch);
+    // float zz = cos(terrain_p->pitch)*sin(terrain_p->yaw);
+    // blaster_p->direction = vector<float>{xx, yy, zz};
+
+    // skyP->cursorListener(window, x, y);
 };
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
@@ -75,11 +92,15 @@ int main(int argc, char ** argv) {
 	X_Fighter x_fighter(mode);
 	Thruster thruster(mode);
 	Blaster blaster(mode);
+	Terrain terrain(mode);
+    Sun sun(mode);
+    Sky sky(mode);
 	Audio audio;
 
-	audio.changeAudio(song);
-	audio.changeAudio(flight);
+	// audio.changeAudio(song);
+	// audio.changeAudio(flight);
 
+    terrain_p = &terrain;
 	blaster_p = &blaster;
 	audio_p = &audio;
 
@@ -87,11 +108,13 @@ int main(int argc, char ** argv) {
 	glViewport(0, 0, mode->width, mode->height);
 
 	glfwSetKeyCallback(window, input);
-	// glfwSetCursorPosCallback(window, cursor);
+	glfwSetCursorPosCallback(window, cursor);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 	while(!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		terrain.renderProgram();
 
 		blaster.renderShots();
 
@@ -99,13 +122,23 @@ int main(int argc, char ** argv) {
 
 		thruster.renderProgram();
 
+        sun.renderProgram();
+
+        sky.renderProgram(sun.viewMatrix.multiplyVector(sun.position), -sun.rotX, 0);
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
+	terrain.freeProgram();
+
 	x_fighter.freeProgram();
 
 	thruster.freeProgram();
+
+    sun.freeProgram();
+
+    sky.freeProgram();
 
 	glfwTerminate();
 	return 0;

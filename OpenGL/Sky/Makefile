@@ -1,22 +1,34 @@
-SYSCONF_LINK = g++
-CPPFLAGS     = -std=c++11
-LDFLAGS      =
+GCC 		 = g++
+CPPFLAGS     = -g -std=c++11
 LIBS         = -lGL -lGLEW -lglfw
 
-DESTDIR = ./
-TARGET  = Sky
+TARGET  	 = sky
 
 OBJECTS := $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 
-all: $(DESTDIR)$(TARGET)
+.PHOONY: all run clean
 
-$(DESTDIR)$(TARGET): $(OBJECTS)
-	$(SYSCONF_LINK) $(LDFLAGS) -o $(DESTDIR)$(TARGET) $(OBJECTS) $(LIBS)
+all: clean $(TARGET) run
 
-$(OBJECTS): %.o: %.cpp
-	$(SYSCONF_LINK) $(CPPFLAGS) -c $(CFLAGS) $< -o $@
+$(TARGET): $(TARGET).o Sky.o Matrix.o Shader.o
+	$(GCC) -o $(TARGET) $(TARGET).o Sky.o Matrix.o Shader.o $(LIBS)
+
+$(TARGET).o: ./$(TARGET).cpp
+	$(GCC) $(CPPFLAGS) -c ./$(TARGET).cpp -o $(TARGET).o
+
+Sky.o: ./Sky.cpp
+	$(GCC) $(CPPFLAGS) -c ./Sky.cpp -o Sky.o
+
+Shader.o: ./../Shader/Shader.cpp
+	$(GCC) $(CPPFLAGS) -c ./../Shader/Shader.cpp -o Shader.o
+
+Matrix.o: ./../Tools/Matrix/Matrix.cpp
+	$(GCC) $(CPPFLAGS) -c ./../Tools/Matrix/Matrix.cpp -o Matrix.o
+
+run: ./$(TARGET)
+	./$(TARGET)
 
 clean:
 	-rm -f $(OBJECTS)
 	-rm -f $(TARGET)
-
+	-rm -f *.o

@@ -50,7 +50,7 @@ public:
 
 	void perspective(float fieldOfView, float aspect, float near, float far);
 
-	Matrix lookAt(vector<float> cameraPosition, vector<float> target, vector<float> up);
+	void lookAt(vector<float> cameraPosition, vector<float> target, vector<float> up);
 
 	Matrix operator * (const Matrix mat);
 

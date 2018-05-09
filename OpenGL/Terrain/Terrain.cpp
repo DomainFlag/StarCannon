@@ -10,13 +10,10 @@
 #include "Terrain.h"
 
 #include "./../Shader/Shader.h"
-#include "./../Shader/Shader.cpp"
 #include "./../Tools/Matrix/Matrix.h"
-#include "./../Tools/Matrix/Matrix.cpp"
-#include "./../Tools/Noise/Noise.cpp"
 using namespace std;
 
-TerrainLayer::TerrainLayer(const GLFWvidmode * mode) {
+Terrain::Terrain(const GLFWvidmode * mode) {
 	this->mode = mode;
 
 	this->terrain.setHoneycomb();
@@ -29,9 +26,9 @@ TerrainLayer::TerrainLayer(const GLFWvidmode * mode) {
 }
 
 
-void TerrainLayer::listenContinouslyToCursor() {
-    this->yaw += this->traceYaw/360.0f*2.0f;
-    this->pitch += -this->tracePitch/360.0f*2.0f;
+void Terrain::listenContinouslyToCursor() {
+    this->yaw += this->traceYaw/this->sensitivity;
+    this->pitch += -this->tracePitch/this->sensitivity;
     if(this->yaw < 0)
         this->yaw += 2*M_PI;
     if(this->pitch < 0)
@@ -40,38 +37,34 @@ void TerrainLayer::listenContinouslyToCursor() {
     this->pitch = fmod(this->pitch, 2*M_PI);
 };
 
-void TerrainLayer::cursorListener(GLFWwindow * window, double posX, double posY) {
+void Terrain::cursorListener(GLFWwindow * window, double posX, double posY) {
 	/**
-	 * Function equation f(x)=1/x will be used to lower the rotation from outer to center of the screen
-	 * Where f(x)=1/x has the domain [1/2, 4] with the image [0.25, 2] and [-4, -1/2] with the image [-2, -0.25]
-	 * Where, the derivative decreases from 1/2 to 4 and increases from -4 to -1/2
+	 * Function equation f(x)=x^2 will be used to lower the rotation from outer to center of the screen
+	 * Where f(x)=x^2 has the domain [0, 2] with the image [0, 4] and [-2, 0] with the image [0, 4]
+	 * Where, the derivative increases starting from origins
 	 */
 	float x = ((posX-mode->width/2.0f)/(mode->width/2.0f));
 	float y = ((posY-mode->height/2.0f)/(mode->height/2.0f));
 
 	if(x < 0.0f) {
-	    x = (x+1.0f)*7.0f/2.0f+1.0f/2.0f;
-	    this->traceYaw = 1.0f/x;
+	    x = pow(x*2.0f, 2.0f);
+	    this->traceYaw = x;
 	} else {
-	    x = -(x-1.0f)*7.0f/2.0f+1.0f/2.0f;
-	    this->traceYaw = -1.0f/x;
+	    x = -pow(x*2.0f, 2.0f);
+	    this->traceYaw = x;
 	}
 
 	if(y < 0.0f) {
-	    y = (y+1.0f)*7.0f/2.0f+1.0f/2.0f;
-	    this->tracePitch = 1.0f/y;
+	    y = pow(y*2.0f, 2.0f);
+	    this->tracePitch = y;
 	} else {
-	    y = -(y-1.0f)*7.0f/2.0f+1.0f/2.0f;
-	    this->tracePitch = -1.0f/y;
+	    y = -pow(y*2.0f, 2.0f);
+	    this->tracePitch = y;
 	}
 };
 
-void TerrainLayer::keyboardListener(GLFWwindow * window, int key, int scancode, int action, int mods) {
+void Terrain::keyboardListener(GLFWwindow * window, int key, int scancode, int action, int mods) {
 	switch(key) {
-		case GLFW_KEY_ESCAPE : {
-			glfwDestroyWindow(window);
-			break;
-		};
 		case GLFW_KEY_A : {
 			this->roll -= 0.05;
 			break;
@@ -91,8 +84,8 @@ void TerrainLayer::keyboardListener(GLFWwindow * window, int key, int scancode, 
 	};
 };
 
-void TerrainLayer::act() {
-	vector<float> quaternionRot = fromEuler(-this->pitch/M_PI*360.0f, this->yaw/M_PI*360.0f, 0);
+void Terrain::act() {
+	vector<float> quaternionRot = fromEuler(-this->pitch/M_PI*180.0f, this->yaw/M_PI*180.0f, 0);
 
     vector<float> result = transformQuat(vector<float>{0.0f, 0.0f, -this->terrain.speed}, quaternionRot);
 
@@ -107,20 +100,18 @@ void TerrainLayer::act() {
     this->translation[2] += result[2];
 };
 
-void TerrainLayer::setParameters() {
+void Terrain::setParameters() {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	glEnable(GL_BLEND);
-	glDisable(GL_CULL_FACE);
-	glBlendFunc(GL_ONE, GL_ZERO);
+    glDisable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
 }
 
-void TerrainLayer::setVariablesLocation() {
+void Terrain::setVariablesLocation() {
 	glUseProgram(this->program);
 
 	this->attribPositionLoc = glGetAttribLocation(program, "a_position");
 
-	this->unifViewLoc = glGetUniformLocation(program, "u_model");
 	this->unifCameraLoc = glGetUniformLocation(program, "u_camera");
 	this->unifPerspectiveLoc = glGetUniformLocation(program, "u_perspective");
 
@@ -129,12 +120,8 @@ void TerrainLayer::setVariablesLocation() {
 	this->unifUpperColorLoc = glGetUniformLocation(program, "u_gradients[2]");
 }
 
-void TerrainLayer::setVariablesData() {
-	this->objectRotX.rotationX(0.0f);
-	this->objectRotY.rotationY(0.0f);
-	this->objectRotZ.rotationZ(0.0f);
-
-	this->perspective.perspective((float) M_PI/3.0f, (float) this->mode->width/this->mode->height, 0.00001f, 30.0f);
+void Terrain::setVariablesData() {
+	this->perspective.perspective(M_PI/3.0f, this->mode->width/this->mode->height, 0.000001f, 30.0f);
 
 	glUniform3f(unifLowerColorLoc, 120.0f/360.0f, 76.0f/100.0f, 55.0f/100.0f);
 	glUniform3f(unifMedianColorLoc, 26.0f/360.0f, 36.0f/100.0f, 65.0f/100.0f);
@@ -144,39 +131,34 @@ void TerrainLayer::setVariablesData() {
 
 	glGenBuffers(1, &positionBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
-	glBufferData(GL_ARRAY_BUFFER, this->terrain.mesh.size()*sizeof(float), this->terrain.mesh.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, this->terrain.mesh.size()*sizeof(GL_FLOAT), this->terrain.mesh.data(), GL_DYNAMIC_DRAW);
 	glVertexAttribPointer(this->attribPositionLoc, 3, GL_FLOAT, false, 0, 0);
 };
 
-void TerrainLayer::renderProgram() {
+void Terrain::renderProgram() {
 	glUseProgram(this->program);
+	this->setParameters();
 
 	glBindBuffer(GL_ARRAY_BUFFER, this->positionBuffer);
-	glBufferData(GL_ARRAY_BUFFER, this->terrain.mesh.size()*sizeof(float), this->terrain.mesh.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, this->terrain.mesh.size()*sizeof(GL_FLOAT), this->terrain.mesh.data(), GL_DYNAMIC_DRAW);
 	glVertexAttribPointer(this->attribPositionLoc, 3, GL_FLOAT, false, 0, 0);
 
-	this->listenContinouslyToCursor();
-	this->act();
-
-	vector<float> quaternionRot = fromEuler(-this->pitch/M_PI*360.0f, this->yaw/M_PI*360.0f, 0);
+	vector<float> quaternionRot = fromEuler(-this->pitch/M_PI*180.0f, this->yaw/M_PI*180.0f, 0);
 	this->quaternionMatrix.fromQuat(quaternionRot);
 
 	this->cameraTranslation.translation(translation[0], 1.0f+translation[1], translation[2]);
 	this->cameraRotX.rotationX(this->pitch);
 	this->cameraRotY.rotationY(this->yaw);
 	this->cameraRotZ.rotationZ(this->roll);
-	this->objectRotX.rotationX(0.0f);
-	this->objectRotY.rotationY(0.0f);
-	this->objectRotZ.rotationZ(0.0f);
-
-	this->modelMatrix = objectRotX*objectRotY*objectRotZ;
 
 	this->cameraMatrix = this->cameraMatrix.inverseMatrix(quaternionMatrix*cameraTranslation);
-	glUniformMatrix4fv(unifViewLoc, 1, false, this->modelMatrix.matrix.data());
 	glUniformMatrix4fv(unifCameraLoc, 1, false, this->cameraMatrix.matrix.data());
 	glUniformMatrix4fv(unifPerspectiveLoc, 1, false, this->perspective.matrix.data());
 
 	glDrawArrays(GL_TRIANGLES, 0, this->terrain.getNbTriangles());
+
+    this->listenContinouslyToCursor();
+    this->act();
 };
 
-void TerrainLayer::freeProgram() {};
+void Terrain::freeProgram() {};
